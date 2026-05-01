@@ -468,7 +468,21 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--border);bord
   </div>
 
   <div class="card">
-    <div class="card-title">Daten</div>
+    <div class="card-title">Daten Export / Import</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Alle Daten exportieren</div><div class="setting-sub">Athleten, Analysen, Einstellungen als JSON</div></div>
+      <button onclick="exportAllData()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:11px;font-weight:700;cursor:pointer;">↑ Exportieren</button>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Daten importieren</div><div class="setting-sub">JSON-Datei aus Browser oder alter Version laden</div></div>
+      <button onclick="document.getElementById('import-file').click()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--accent2);background:rgba(59,140,255,.1);color:var(--accent2);font-size:11px;cursor:pointer;">↓ Importieren</button>
+      <input type="file" id="import-file" accept=".json" onchange="importAllData(event)" style="display:none">
+    </div>
+    <div id="import-status" style="display:none;font-size:11px;padding:6px 10px;border-radius:6px;margin-top:4px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Daten verwalten</div>
     <div class="setting-row"><div><div class="setting-label">Alle Analysen löschen</div><div class="setting-sub">Athleten-Profile bleiben erhalten</div></div><button onclick="clearSessions()" style="padding:5px 10px;border-radius:6px;border:1px solid rgba(226,75,74,.3);background:transparent;color:var(--danger);font-size:11px;cursor:pointer;">Löschen</button></div>
     <div class="setting-row"><div><div class="setting-label">Alle Daten zurücksetzen</div><div class="setting-sub">Profile + Analysen werden gelöscht</div></div><button onclick="clearAll()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--danger);color:#fff;font-size:11px;cursor:pointer;">Reset</button></div>
   </div>
@@ -579,7 +593,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--border);bord
     <h3 id="ath-modal-title">Neuer Athlet</h3>
     <input type="hidden" id="m-id">
     <div class="form-row"><label>Name</label><input type="text" id="m-name" placeholder="z.B. Klaus Müller"></div>
-    <div class="form-row"><label>Spielklasse</label><select id="m-level"><option>Anfänger</option><option>Fortgeschritten</option><option>Vereinsspieler</option><option>Turnierspieler</option><option>Profi</option></select></div>
+    <div class="form-row"><label>Spielklasse / Gruppe</label><input type="text" id="m-level" placeholder="z.B. Damenmannschaft A, Jugend U16, Profi..."></div>
     <div class="form-row"><label>Bevorzugte Disziplin</label><select id="m-tech"><option value="legen">Legen</option><option value="schiessen">Schießen</option><option value="beides">Beides</option></select></div>
 
     <div class="modal-divider">Individuelle Winkel-Vorgaben (überschreibt globale Werte)</div>
@@ -1694,6 +1708,89 @@ setTimeout(()=>{
     // Show manually via settings only
   }
 },2000);
+
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
+function exportAllData(){
+  const data = {
+    version: '1.0',
+    exported: new Date().toISOString(),
+    athletes: athletes,
+    sessions: sessions,
+    mediaVids: mediaVids,
+    savedDrawings: savedDrawings.map(d=>({...d, thumb:''})), // skip thumbs to keep size small
+    globalSettings: globalSettings
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'petanque_coach_backup_'+new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'-')+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function importAllData(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!data.version || !data.athletes){
+        showImportStatus('Ungültige Datei — kein PétanqueCoach-Backup.', false);
+        return;
+      }
+      // Merge or overwrite
+      const choice = confirm(
+        `Backup vom ${new Date(data.exported).toLocaleDateString('de-DE')} gefunden:\n` +
+        `${data.athletes.length} Athleten, ${data.sessions.length} Analysen\n\n` +
+        `OK = Zusammenführen (bestehende Daten behalten)\n` +
+        `Abbrechen = Ersetzen (bestehende Daten überschreiben)`
+      );
+      if(choice){
+        // Merge: add only new entries
+        const existingAthIds = new Set(athletes.map(a=>a.id));
+        const newAths = data.athletes.filter(a=>!existingAthIds.has(a.id));
+        athletes = [...athletes, ...newAths];
+        const existingSessIds = new Set(sessions.map(s=>s.id));
+        const newSess = data.sessions.filter(s=>!existingSessIds.has(s.id));
+        sessions = [...sessions, ...newSess];
+        showImportStatus(`✅ ${newAths.length} neue Athleten, ${newSess.length} neue Analysen importiert.`, true);
+      } else {
+        // Replace all
+        athletes = data.athletes || [];
+        sessions = data.sessions || [];
+        mediaVids = data.mediaVids || [];
+        if(data.globalSettings) globalSettings = data.globalSettings;
+        showImportStatus(`✅ Alle Daten ersetzt: ${athletes.length} Athleten, ${sessions.length} Analysen.`, true);
+      }
+      stor_s('pc_ath', athletes);
+      stor_s('pc_sess', sessions);
+      stor_s('pc_media', mediaVids);
+      stor_s('pc_settings', globalSettings);
+      renderAthletes();
+      renderHistory();
+      updateAllAthleteSelects();
+      loadGlobalSettings();
+    } catch(err) {
+      showImportStatus('Fehler beim Lesen der Datei: '+err.message, false);
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+function showImportStatus(msg, success){
+  const el = document.getElementById('import-status');
+  if(!el) return;
+  el.style.display = 'block';
+  el.style.background = success ? 'rgba(0,200,160,.15)' : 'rgba(226,75,74,.15)';
+  el.style.color = success ? '#00c8a0' : '#e24b4a';
+  el.style.border = '1px solid '+(success ? 'rgba(0,200,160,.3)' : 'rgba(226,75,74,.3)');
+  el.textContent = msg;
+  setTimeout(()=>el.style.display='none', 5000);
+}
 
 </script>
 </body>
