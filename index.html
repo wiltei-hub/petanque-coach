@@ -738,6 +738,8 @@ function toggleOL(key,btn){overlays[key]=!overlays[key];btn.classList.toggle('on
 // ── VIDEO LOADING ─────────────────────────────────────────────────────────────
 function loadVid(evt,who){
   const file=evt.target.files[0]; if(!file)return;
+  // *** Store original filename for rename ***
+  originalFileNames[who] = file.name;
   const vid=document.getElementById(who+'-vid');
   vid.src=URL.createObjectURL(file); vid.playbackRate=speed;
   vid.style.display='block';
@@ -750,13 +752,16 @@ function loadVid(evt,who){
   const dt=file.lastModified?new Date(file.lastModified).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   document.getElementById(who+'-fmeta').textContent=mb+' MB · '+dt;
   document.getElementById(who+'-assign').style.display='flex';
-  // Pre-select current athlete
+  // Pre-select current athlete in dropdown
+  updateAllAthleteSelects();
   const sel=document.getElementById(who+'-vas-ath');
-  if(currentAthId) sel.value=currentAthId;
+  if(sel && currentAthId) sel.value=String(currentAthId);
   vid.ontimeupdate=()=>{if(!vid.duration)return;document.getElementById(who+'-tl').style.width=(vid.currentTime/vid.duration*100)+'%';document.getElementById(who+'-tc').textContent=fmt(vid.currentTime)+'/'+fmt(vid.duration);};
   vid.onended=()=>document.getElementById(who+'-pb').textContent='▶';
-  // Add to media library (metadata)
+  // Add to media library
   addToMedia(file,who);
+  // Show rename preview
+  updateRenamePreview(who);
 }
 
 function updateVidAssign(who){
