@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PétanqueCoach</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00c8a0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PétanqueCoach">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--accent:#00c8a0;--accent2:#3b8cff;--warn:#f0a500;--danger:#e24b4a;--text:#e6edf3;--muted:#8b949e;--border:rgba(255,255,255,0.09);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100dvh;display:flex;flex-direction:column;}
+#topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.logo{font-size:14px;font-weight:700;color:var(--accent);margin-right:4px;}
+.mbtn,.navbtn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;}
+.mbtn.on{background:rgba(0,200,160,.15);border-color:var(--accent);color:var(--accent);}
+.navbtn.on{background:rgba(59,140,255,.15);border-color:var(--accent2);color:var(--accent2);}
+.page{display:none;flex:1;flex-direction:column;padding:10px;gap:10px;overflow-y:auto;}
+.page.active{display:flex;}
+
+/* CARDS */
+.card{background:var(--panel);border-radius:10px;border:1px solid var(--border);padding:10px 12px;}
+.card-title{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.placeholder{font-size:12px;color:var(--muted);text-align:center;padding:20px;background:var(--panel);border-radius:10px;border:1px solid var(--border);}
+
+/* ATHLETE SELECTOR */
+.ath-sel{background:var(--panel);border-radius:10px;border:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:8px;}
+.ath-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.ath-nm{font-size:13px;font-weight:600;color:var(--text);}
+.ath-sb{font-size:10px;color:var(--muted);}
+.sel-btn{padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;margin-left:auto;white-space:nowrap;}
+
+/* VIDEO */
+.vid-row{display:grid;gap:8px;}
+.vid-row.sbs{grid-template-columns:1fr 1fr;}
+.vid-row.solo{grid-template-columns:1fr;}
+.vid-panel{background:var(--panel);border-radius:10px;border:1px solid var(--border);overflow:hidden;}
+.vid-header{padding:6px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px;}
+.vid-title{font-size:11px;font-weight:600;color:var(--text);flex:1;}
+.vbadge{font-size:10px;padding:1px 6px;border-radius:20px;}
+.ba{background:rgba(59,140,255,.15);color:var(--accent2);border:1px solid rgba(59,140,255,.3);}
+.br{background:rgba(0,200,160,.15);color:var(--accent);border:1px solid rgba(0,200,160,.3);}
+.layout-btn{padding:2px 7px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.layout-btn.on{border-color:var(--warn);color:var(--warn);}
+.fileinfo{padding:4px 10px;border-bottom:1px solid var(--border);display:none;flex-direction:column;gap:1px;}
+.fname{font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fmeta{font-size:10px;color:var(--muted);}
+.vid-assign{padding:5px 10px;border-bottom:1px solid var(--border);display:none;align-items:center;gap:6px;background:var(--panel2);}
+.vas-label{font-size:10px;color:var(--muted);}
+.vas-select{background:var(--panel);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:11px;padding:3px 6px;cursor:pointer;}
+.vid-body{position:relative;background:#000;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;}
+.vid-body video{width:100%;height:100%;object-fit:contain;}
+.vid-body canvas{position:absolute;inset:0;pointer-events:none;}
+.upload-area{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px;cursor:pointer;width:100%;height:100%;min-height:100px;}
+.uicon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;}
+.utxt{font-size:11px;color:var(--muted);text-align:center;}
+.ubtn{padding:4px 12px;border-radius:6px;border:1px solid var(--accent);background:rgba(0,200,160,.1);color:var(--accent);font-size:11px;cursor:pointer;}
+input[type=file]{display:none;}
+.vid-ctrl{padding:5px 8px;display:flex;align-items:center;gap:4px;border-top:1px solid var(--border);}
+.cbtn{padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.tl{flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:2px;cursor:pointer;}
+.tl-f{height:4px;background:var(--accent);border-radius:2px;width:0%;pointer-events:none;}
+.tc{font-size:10px;color:var(--muted);min-width:56px;text-align:right;}
+
+/* OVERLAY + SYNC */
+.overlay-bar,.sync-bar{background:var(--panel);border-radius:8px;border:1px solid var(--border);padding:6px 10px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.ol,.sl{font-size:11px;color:var(--muted);}
+.otgl{padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.otgl.on{border-color:var(--accent);color:var(--accent);background:rgba(0,200,160,.1);}
+.sbtn{padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:11px;cursor:pointer;}
+.spd-g{display:flex;gap:3px;margin-left:auto;}
+.spd{padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.spd.on{background:rgba(240,165,0,.15);border-color:var(--warn);color:var(--warn);}
+.analyse-btn{padding:9px;border-radius:9px;border:none;background:var(--accent);color:#000;font-size:13px;font-weight:700;cursor:pointer;width:100%;}
+
+/* SCORE */
+.score-row{background:var(--panel);border-radius:10px;border:1px solid var(--border);padding:10px;display:flex;align-items:center;gap:10px;}
+.score-info{flex:1;}
+.score-num{font-size:24px;font-weight:700;color:var(--text);}
+.score-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+.save-btn{padding:6px 12px;border-radius:7px;border:none;background:var(--accent);color:#000;font-size:11px;font-weight:700;cursor:pointer;}
+
+/* METRICS */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(max-width:500px){.two-col{grid-template-columns:1fr;}}
+.met{display:flex;flex-direction:column;gap:2px;margin-bottom:6px;}
+.mh{display:flex;justify-content:space-between;align-items:center;}
+.mn{font-size:11px;color:var(--muted);}
+.mv-r{display:flex;gap:5px;align-items:center;}
+.mv{font-size:12px;font-weight:700;}
+.mv.g{color:var(--accent)}.mv.w{color:var(--warn)}.mv.b{color:var(--danger)}
+.mv-ref{font-size:10px;color:var(--muted);}
+.bbg{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-top:2px;}
+.bf{height:3px;border-radius:2px;transition:width .4s;}
+.bf.g{background:var(--accent)}.bf.w{background:var(--warn)}.bf.b{background:var(--danger)}
+.fbi{display:flex;gap:6px;font-size:11px;line-height:1.5;padding:4px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.fbi:last-child{border-bottom:none;}
+.fbd{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.fbd.g{background:var(--accent)}.fbd.w{background:var(--warn)}.fbd.b{background:var(--danger)}
+.fbt{color:var(--muted);}.fbt strong{color:var(--text);}
+textarea{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:7px 9px;resize:vertical;min-height:60px;font-family:inherit;}
+
+/* PROFILES */
+.profile-header,.hist-header{display:flex;align-items:center;justify-content:space-between;}
+.profile-header h2,.hist-header h2{font-size:15px;font-weight:600;color:var(--text);}
+.add-btn{padding:5px 12px;border-radius:7px;border:none;background:var(--accent);color:#000;font-size:11px;font-weight:700;cursor:pointer;}
+.pdf-btn{padding:5px 12px;border-radius:7px;border:none;background:var(--accent2);color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
+.athlete-card{background:var(--panel);border-radius:9px;border:1px solid var(--border);padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.athlete-card.selected{border-color:var(--accent);}
+.ac-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.ac-info{flex:1;}
+.ac-name{font-size:13px;font-weight:600;color:var(--text);}
+.ac-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.ac-score{font-size:15px;font-weight:700;}
+.ac-btns{display:flex;gap:5px;}
+.edit-btn{padding:3px 7px;border-radius:5px;border:1px solid rgba(59,140,255,.3);background:transparent;color:var(--accent2);font-size:10px;cursor:pointer;}
+.del-btn{padding:3px 7px;border-radius:5px;border:1px solid rgba(226,75,74,.3);background:transparent;color:var(--danger);font-size:10px;cursor:pointer;}
+
+/* MEDIATHEK */
+.media-filters{display:flex;gap:5px;flex-wrap:wrap;}
+.mfbtn{padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.mfbtn.on{background:rgba(0,200,160,.15);border-color:var(--accent);color:var(--accent);}
+.media-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(max-width:480px){.media-grid{grid-template-columns:1fr;}}
+.media-card{background:var(--panel);border-radius:9px;border:1px solid var(--border);overflow:hidden;}
+.media-thumb{background:#000;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);position:relative;}
+.media-thumb video{width:100%;height:100%;object-fit:cover;}
+.media-disc-badge{position:absolute;top:5px;left:5px;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;}
+.disc-legen{background:rgba(0,200,160,.85);color:#000;}
+.disc-schiessen{background:rgba(59,140,255,.85);color:#fff;}
+.disc-sonstiges{background:rgba(240,165,0,.85);color:#000;}
+.media-info{padding:7px 9px;}
+.media-name{font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.media-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.media-assign-row{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+.mas{background:var(--panel2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:10px;padding:2px 5px;cursor:pointer;flex:1;}
+.load-to-btn{padding:3px 8px;border-radius:5px;border:none;background:rgba(0,200,160,.15);color:var(--accent);font-size:10px;cursor:pointer;border:1px solid rgba(0,200,160,.3);}
+
+/* SETTINGS */
+.settings-section{display:flex;flex-direction:column;gap:8px;}
+.settings-section h3{font-size:13px;font-weight:600;color:var(--text);}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:12px;color:var(--text);}
+.setting-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.setting-input{background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:5px 8px;width:70px;text-align:center;}
+
+/* HISTORY */
+.hist-filter{display:flex;gap:5px;flex-wrap:wrap;}
+.hfbtn{padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.hfbtn.on{background:rgba(0,200,160,.15);border-color:var(--accent);color:var(--accent);}
+.hist-card{background:var(--panel);border-radius:9px;border:1px solid var(--border);padding:9px 11px;}
+.hc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.hc-name{font-size:12px;font-weight:600;color:var(--text);}
+.hc-score{font-size:14px;font-weight:700;}
+.hc-meta{font-size:10px;color:var(--muted);margin-bottom:4px;}
+.hc-metrics{display:flex;gap:8px;flex-wrap:wrap;}
+.hc-m{font-size:10px;color:var(--muted);}
+.hc-m span{color:var(--text);font-weight:600;}
+.hc-note{font-size:10px;color:var(--muted);margin-top:4px;font-style:italic;border-top:1px solid var(--border);padding-top:4px;}
+.disc-chip{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-right:4px;}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--panel);border-radius:14px;border:1px solid var(--border);padding:16px;width:100%;max-width:340px;max-height:90dvh;overflow-y:auto;}
+.modal h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.form-row{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;}
+.form-row label{font-size:11px;color:var(--muted);}
+.form-row input,.form-row select{background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:6px 8px;width:100%;}
+.angle-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:9px;}
+.angle-field{display:flex;flex-direction:column;gap:2px;align-items:center;}
+.angle-field label{font-size:10px;color:var(--muted);text-align:center;}
+.angle-field input{background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-weight:700;padding:5px;width:100%;text-align:center;}
+.modal-divider{font-size:10px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin:8px 0 6px;border-top:1px solid var(--border);padding-top:8px;}
+.modal-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:4px;}
+.modal-cancel{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;}
+.modal-ok{padding:6px 12px;border-radius:7px;border:none;background:var(--accent);color:#000;font-size:12px;font-weight:700;cursor:pointer;}
+
+/* SAVE MODAL */
+#save-modal .modal{max-width:360px;}
+
+/* DRAW PAGE */
+.draw-toolbar{background:var(--panel);border-radius:10px;border:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.draw-toolbar .tl-label{font-size:11px;color:var(--muted);}
+.tool-btn{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.tool-btn.on{border-color:var(--accent);background:rgba(0,200,160,.15);color:var(--accent);}
+.color-btn{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0;}
+.color-btn.on{border-color:#fff;transform:scale(1.2);}
+.size-btn{padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;}
+.size-btn.on{border-color:var(--accent);color:var(--accent);}
+.draw-canvas-wrap{position:relative;background:#000;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+.draw-canvas-wrap video{width:100%;display:block;}
+.draw-canvas-wrap canvas{position:absolute;inset:0;width:100%;height:100%;}
+#draw-canvas{cursor:crosshair;touch-action:none;}
+.draw-legend{background:var(--panel);border-radius:10px;border:1px solid var(--border);padding:8px 12px;display:flex;gap:10px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.leg-dot{width:10px;height:10px;border-radius:50%;}
+.layer-list{display:flex;flex-direction:column;gap:5px;}
+.layer-item{background:var(--panel);border-radius:7px;border:1px solid var(--border);padding:6px 10px;display:flex;align-items:center;gap:8px;}
+.layer-thumb{width:40px;height:22px;border-radius:4px;background:var(--panel2);border:1px solid var(--border);overflow:hidden;}
+.layer-name{font-size:11px;color:var(--text);flex:1;}
+.layer-vis{padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.layer-del{padding:2px 6px;border-radius:4px;border:1px solid rgba(226,75,74,.3);background:transparent;color:var(--danger);font-size:10px;cursor:pointer;}
+
+
+/* RENAME / NAME CONFIRM */
+.name-confirm-bar{background:var(--panel2);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.name-confirm-bar input{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:5px 8px;min-width:120px;}
+.name-confirm-bar .nc-label{font-size:11px;color:var(--muted);white-space:nowrap;}
+.name-confirm-btn{padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.name-cancel-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;}
+
+
+/* PWA INSTALL BANNER */
+#pwa-banner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #00c8a0;border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:300;box-shadow:0 4px 24px rgba(0,0,0,.5);max-width:360px;width:calc(100% - 32px);}
+#pwa-banner .pwa-icon{width:36px;height:36px;border-radius:8px;background:rgba(0,200,160,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+#pwa-banner .pwa-text{flex:1;font-size:12px;color:#e6edf3;}
+#pwa-banner .pwa-text strong{display:block;font-size:13px;margin-bottom:1px;}
+#pwa-banner .pwa-install{padding:6px 14px;border-radius:8px;border:none;background:#00c8a0;color:#000;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+#pwa-banner .pwa-close{padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#8b949e;font-size:12px;cursor:pointer;}
+#fs-bar{background:rgba(59,140,255,.1);border:1px solid rgba(59,140,255,.3);border-radius:8px;padding:6px 12px;display:none;align-items:center;gap:8px;font-size:11px;color:#3b8cff;}
+#fs-bar button{padding:3px 10px;border-radius:5px;border:1px solid rgba(59,140,255,.4);background:rgba(59,140,255,.15);color:#3b8cff;font-size:11px;cursor:pointer;white-space:nowrap;}
+
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo">PétanqueCoach</div>
+  <button class="navbtn on"  onclick="showPage('analyse',this)">Analyse</button>
+  <button class="navbtn" onclick="showPage('media',this)">Mediathek</button>
+  <button class="navbtn" onclick="showPage('profile',this)">Athleten</button>
+  <button class="navbtn" onclick="showPage('history',this)">Verlauf</button>
+  <button class="navbtn" onclick="showPage('draw',this)">✏ Zeichnen</button>
+  <button class="navbtn" onclick="showPage('settings',this)">⚙ Einstellungen</button>
+</div>
+
+<!-- ═══ ANALYSE ═══ -->
+<!-- PWA INSTALL BANNER -->
+<div id="pwa-banner" style="display:none;">
+  <div class="pwa-icon">🎯</div>
+  <div class="pwa-text"><strong>PétanqueCoach installieren</strong>App auf dem Homescreen speichern</div>
+  <button class="pwa-install" onclick="installPWA()">Installieren</button>
+  <button class="pwa-close" onclick="document.getElementById('pwa-banner').style.display='none'">✕</button>
+</div>
+
+<div class="page active" id="pg-analyse">
+  <div class="ath-sel">
+    <div class="ath-av" id="sel-avatar" style="background:rgba(0,200,160,.2);border:1px solid var(--accent);color:var(--accent)">?</div>
+    <div><div class="ath-nm" id="sel-name">Kein Athlet</div><div class="ath-sb" id="sel-sub">Unter "Athleten" auswählen</div></div>
+    <button class="sel-btn" onclick="showPage('profile',document.querySelectorAll('.navbtn')[2])">Wählen</button>
+  </div>
+
+  <!-- QUICK START BANNER -->
+  <div id="quick-start" style="display:none;background:var(--panel);border-radius:10px;border:2px solid var(--accent);padding:10px 14px;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div id="qs-avatar" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;"></div>
+    <div style="flex:1;">
+      <div id="qs-name" style="font-size:13px;font-weight:600;color:var(--text);"></div>
+      <div id="qs-sub" style="font-size:10px;color:var(--muted);margin-top:2px;"></div>
+    </div>
+    <button id="qs-btn" onclick="quickStartLoad()" style="padding:7px 16px;border-radius:8px;border:none;color:#000;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">▶ Aufnahme laden</button>
+    <button onclick="quickStartCamera()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer;white-space:nowrap;">📷 Kamera öffnen</button>
+  </div>
+
+  <!-- FILE SYSTEM ACCESS BAR -->
+  <div id="fs-bar">
+    <span>📁 Dateizugriff:</span>
+    <span id="fs-folder-name" style="flex:1;color:#e6edf3;">Kein Ordner gewählt</span>
+    <button onclick="requestFileAccess()">Ordner wählen</button>
+    <button onclick="document.getElementById('fs-bar').style.display='none'">✕</button>
+  </div>
+
+  <div class="vid-row sbs" id="vid-row">
+    <!-- ATHLET -->
+    <div class="vid-panel" id="panel-ath">
+      <div class="vid-header">
+        <span class="vid-title">Athlet</span>
+        <span class="vbadge ba">Aufnahme</span>
+        <button class="layout-btn" onclick="setSolo('ath',this)" id="solo-ath">Vollbild</button>
+      </div>
+      <div class="fileinfo" id="ath-fileinfo"><div class="fname" id="ath-fname"></div><div class="fmeta" id="ath-fmeta"></div></div>
+      <div class="name-confirm-bar" id="ath-name-confirm" style="display:none;margin:0 8px 6px;">
+        <span class="nc-label">✏ App-Name:</span>
+        <input type="text" id="ath-name-input" placeholder="Name in der App…">
+        <button class="name-confirm-btn" onclick="confirmVideoName('ath')">✓ Speichern + Anleitung</button>
+        <button class="name-cancel-btn" onclick="document.getElementById('ath-name-confirm').style.display='none'">✕</button>
+      </div>
+      <div class="vid-assign" id="ath-assign">
+        <span class="vas-label">Athlet:</span>
+        <select class="vas-select" id="ath-vas-ath" onchange="updateVidAssign('ath')"></select>
+        <span class="vas-label">Disziplin:</span>
+        <select class="vas-select" id="ath-vas-disc" onchange="updateVidAssign('ath')">
+          <option value="legen">Legen</option>
+          <option value="schiessen">Schießen</option>
+          <option value="sonstiges">Sonstiges</option>
+        </select>
+      </div>
+      <div class="vid-body">
+        <div class="upload-area" id="ath-upload" onclick="document.getElementById('ath-file').click()">
+          <div class="uicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b949e" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="utxt">Video laden</div><div class="ubtn">Auswählen</div>
+        </div>
+        <video id="ath-vid" style="display:none" playsinline></video>
+        <canvas id="ath-cvs" style="display:none"></canvas>
+      </div>
+      <div class="vid-ctrl" id="ath-ctrl" style="display:none">
+        <button class="cbtn" onclick="seekRel('ath',-2)">-2s</button>
+        <button class="cbtn" onclick="seekRel('ath',-0.04)">◀</button>
+        <button class="cbtn" onclick="togglePlay('ath')" id="ath-pb">▶</button>
+        <button class="cbtn" onclick="seekRel('ath',0.04)">▶|</button>
+        <button class="cbtn" onclick="seekRel('ath',2)">+2s</button>
+        <div class="tl" onclick="seekClick(event,'ath')"><div class="tl-f" id="ath-tl"></div></div>
+        <div class="tc" id="ath-tc">0:00</div>
+      </div>
+      <input type="file" id="ath-file" accept="video/*" onchange="loadVid(event,'ath')">
+    </div>
+
+    <!-- REFERENZ -->
+    <div class="vid-panel" id="panel-ref">
+      <div class="vid-header">
+        <span class="vid-title">Referenz</span>
+        <span class="vbadge br">Idealform</span>
+        <button class="layout-btn" onclick="setSolo('ref',this)" id="solo-ref">Vollbild</button>
+      </div>
+      <div class="fileinfo" id="ref-fileinfo"><div class="fname" id="ref-fname"></div><div class="fmeta" id="ref-fmeta"></div></div>
+      <div class="name-confirm-bar" id="ref-name-confirm" style="display:none;margin:0 8px 6px;">
+        <span class="nc-label">✏ App-Name:</span>
+        <input type="text" id="ref-name-input" placeholder="Name in der App…">
+        <button class="name-confirm-btn" onclick="confirmVideoName('ref')">✓ Speichern + Anleitung</button>
+        <button class="name-cancel-btn" onclick="document.getElementById('ref-name-confirm').style.display='none'">✕</button>
+      </div>
+      <div class="vid-assign" id="ref-assign">
+        <span class="vas-label">Athlet:</span>
+        <select class="vas-select" id="ref-vas-ath" onchange="updateVidAssign('ref')"></select>
+        <span class="vas-label">Disziplin:</span>
+        <select class="vas-select" id="ref-vas-disc" onchange="updateVidAssign('ref')">
+          <option value="legen">Legen</option>
+          <option value="schiessen">Schießen</option>
+          <option value="sonstiges">Sonstiges</option>
+        </select>
+      </div>
+      <div class="vid-body">
+        <div class="upload-area" id="ref-upload" onclick="document.getElementById('ref-file').click()">
+          <div class="uicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b949e" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="utxt">Video laden</div><div class="ubtn">Auswählen</div>
+        </div>
+        <video id="ref-vid" style="display:none" playsinline></video>
+        <canvas id="ref-cvs" style="display:none"></canvas>
+      </div>
+      <div class="vid-ctrl" id="ref-ctrl" style="display:none">
+        <button class="cbtn" onclick="seekRel('ref',-2)">-2s</button>
+        <button class="cbtn" onclick="seekRel('ref',-0.04)">◀</button>
+        <button class="cbtn" onclick="togglePlay('ref')" id="ref-pb">▶</button>
+        <button class="cbtn" onclick="seekRel('ref',0.04)">▶|</button>
+        <button class="cbtn" onclick="seekRel('ref',2)">+2s</button>
+        <div class="tl" onclick="seekClick(event,'ref')"><div class="tl-f" id="ref-tl"></div></div>
+        <div class="tc" id="ref-tc">0:00</div>
+      </div>
+      <input type="file" id="ref-file" accept="video/*" onchange="loadVid(event,'ref')">
+    </div>
+  </div>
+
+  <div class="overlay-bar">
+    <span class="ol">Einblendungen:</span>
+    <button class="otgl on" onclick="toggleOL('skeleton',this)">Skelett</button>
+    <button class="otgl on" onclick="toggleOL('angles',this)">Winkel</button>
+    <button class="otgl on" onclick="toggleOL('lines',this)">Linien</button>
+    <button class="otgl on" onclick="toggleOL('arc',this)">Bogen</button>
+    <button class="otgl" onclick="toggleOL('ball',this)">Kugel</button>
+  </div>
+
+  <div class="sync-bar">
+    <button class="sbtn" onclick="syncPlay()">▶ Beide</button>
+    <button class="sbtn" onclick="syncPause()">⏸ Pause</button>
+    <button class="sbtn" onclick="syncReset()">⏮ Anfang</button>
+    <div class="spd-g">
+      <button class="spd" onclick="setSpd(1,this)">1x</button>
+      <button class="spd on" onclick="setSpd(0.5,this)">½x</button>
+      <button class="spd" onclick="setSpd(0.25,this)">¼x</button>
+    </div>
+  </div>
+
+  <button class="analyse-btn" onclick="analyzeFrame()">Frame analysieren — Winkel + Linien einblenden</button>
+
+  <div class="score-row">
+    <svg width="56" height="56" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6"/>
+      <circle id="sarc" cx="32" cy="32" r="26" fill="none" stroke="#00c8a0" stroke-width="6" stroke-dasharray="163.4" stroke-dashoffset="163.4" stroke-linecap="round" transform="rotate(-90 32 32)" style="transition:stroke-dashoffset .6s"/>
+    </svg>
+    <div class="score-info"><div class="score-num" id="snum">—</div><div class="score-sub" id="ssub">Frame analysieren</div></div>
+    <button class="save-btn" onclick="openSaveModal()">Speichern</button>
+  </div>
+
+  <div class="two-col" id="metrics-area">
+    <div class="placeholder" style="grid-column:1/-1">Nach der Analyse erscheinen hier Gelenkwinkel und Feedback</div>
+  </div>
+</div>
+
+<!-- ═══ MEDIATHEK ═══ -->
+<div class="page" id="pg-media">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <h2 style="font-size:15px;font-weight:600;color:var(--text);">Mediathek</h2>
+    <button class="add-btn" onclick="document.getElementById('media-file').click()">+ Video hinzufügen</button>
+    <input type="file" id="media-file" accept="video/*" multiple onchange="addMediaVideos(event)" style="display:none">
+  </div>
+  <div class="media-filters" id="media-filters">
+    <button class="mfbtn on" onclick="filterMedia('alle',this)">Alle</button>
+    <button class="mfbtn" onclick="filterMedia('legen',this)">Legen</button>
+    <button class="mfbtn" onclick="filterMedia('schiessen',this)">Schießen</button>
+    <button class="mfbtn" onclick="filterMedia('sonstiges',this)">Sonstiges</button>
+    <button class="mfbtn" onclick="filterMedia('unzugeordnet',this)">Unzugeordnet</button>
+  </div>
+  <div class="media-grid" id="media-grid">
+    <div class="placeholder" style="grid-column:1/-1">Noch keine Videos — tippe auf "+ Video hinzufügen"</div>
+  </div>
+</div>
+
+<!-- ═══ ATHLETEN ═══ -->
+<div class="page" id="pg-profile">
+  <div class="profile-header"><h2>Athleten-Profile</h2><button class="add-btn" onclick="openAthleteModal(null)">+ Neu</button></div>
+  <div id="athlete-list"><div class="placeholder">Noch keine Athleten</div></div>
+</div>
+
+<!-- ═══ VERLAUF ═══ -->
+<div class="page" id="pg-history">
+  <div class="hist-header"><h2>Analyse-Verlauf</h2><button class="pdf-btn" onclick="generatePDF()">PDF Report</button></div>
+  <div class="hist-filter" id="hist-filter"></div>
+  <div id="hist-list"><div class="placeholder">Noch keine Analysen</div></div>
+</div>
+
+<!-- ═══ EINSTELLUNGEN ═══ -->
+<div class="page" id="pg-settings">
+  <div class="card">
+    <div class="card-title">Globale Winkel-Vorgaben (Standard für alle Athleten)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px;">Legen</div>
+        <div class="setting-row"><div><div class="setting-label">Handgelenk</div><div class="setting-sub">Zielwinkel °</div></div><input class="setting-input" type="number" id="g-legen-w" value="45" min="0" max="180" onchange="saveGlobalSettings()"></div>
+        <div class="setting-row"><div><div class="setting-label">Ellbogen</div><div class="setting-sub">Zielwinkel °</div></div><input class="setting-input" type="number" id="g-legen-e" value="35" min="0" max="180" onchange="saveGlobalSettings()"></div>
+        <div class="setting-row"><div><div class="setting-label">Schulter</div><div class="setting-sub">Zielwinkel °</div></div><input class="setting-input" type="number" id="g-legen-s" value="55" min="0" max="180" onchange="saveGlobalSettings()"></div>
+        <div class="setting-row"><div><div class="setting-label">Toleranz</div><div class="setting-sub">± Grad (grün)</div></div><input class="setting-input" type="number" id="g-legen-tol" value="8" min="1" max="30" onchange="saveGlobalSettings()"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--accent2);margin-bottom:6px;">Schießen</div>
+        <div class="setting-row"><div><div class="setting-label">Handgelenk</div><div class="setting-sub">Zielwinkel °</div></div><input class="setting-input" type="number" id="g-schiessen-w" value="30" min="0" max="180" onchange="saveGlobalSettings()"></div>
+        <div class="setting-row"><div><div class="setting-label">Ellbogen</div><div class="setting-sub">Zielwinkel °</div></div><input class="setting-input" type="number" id="g-schiessen-e" value="50" min="0" max="180" onchange="saveGlobalSettings()"></div>
+        <div class="setting-row"><div><div class="setting-label">Schulter</div><div class="setting-sub">Zielwinkel °</div></div><input class="setting-input" type="number" id="g-schiessen-s" value="80" min="0" max="180" onchange="saveGlobalSettings()"></div>
+        <div class="setting-row"><div><div class="setting-label">Toleranz</div><div class="setting-sub">± Grad (grün)</div></div><input class="setting-input" type="number" id="g-schiessen-tol" value="8" min="1" max="30" onchange="saveGlobalSettings()"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">App Installation (PWA)</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Als App installieren</div><div class="setting-sub">Auf Homescreen — läuft auch offline</div></div>
+      <button onclick="installPWA()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#000;font-size:11px;font-weight:700;cursor:pointer;">Installieren</button>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Ordner-Zugriff</div><div class="setting-sub">Direktes Umbenennen von Dateien</div></div>
+      <button onclick="requestFileAccess()" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(59,140,255,.4);background:rgba(59,140,255,.1);color:var(--accent2);font-size:11px;cursor:pointer;">Ordner wählen</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Daten</div>
+    <div class="setting-row"><div><div class="setting-label">Alle Analysen löschen</div><div class="setting-sub">Athleten-Profile bleiben erhalten</div></div><button onclick="clearSessions()" style="padding:5px 10px;border-radius:6px;border:1px solid rgba(226,75,74,.3);background:transparent;color:var(--danger);font-size:11px;cursor:pointer;">Löschen</button></div>
+    <div class="setting-row"><div><div class="setting-label">Alle Daten zurücksetzen</div><div class="setting-sub">Profile + Analysen werden gelöscht</div></div><button onclick="clearAll()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--danger);color:#fff;font-size:11px;cursor:pointer;">Reset</button></div>
+  </div>
+</div>
+
+
+<!-- ═══ ZEICHNEN ═══ -->
+<div class="page" id="pg-draw">
+
+  <!-- VIDEO + ATHLET ZUORDNUNG -->
+  <div class="card" style="padding:8px 12px;display:flex;flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--muted);">Video:</span>
+      <select id="draw-vid-sel" onchange="loadDrawVideo()" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;flex:1;">
+        <option value="ath">Athleten-Video (aus Analyse)</option>
+        <option value="ref">Referenz-Video (aus Analyse)</option>
+      </select>
+      <button onclick="document.getElementById('draw-ext-file').click()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--accent);background:rgba(0,200,160,.1);color:var(--accent);font-size:11px;cursor:pointer;">Anderes Video laden</button>
+      <input type="file" id="draw-ext-file" accept="video/*" onchange="loadDrawExtVideo(event)" style="display:none">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--border);">
+      <span style="font-size:11px;color:var(--muted);">Athlet:</span>
+      <select id="draw-ath-sel" onchange="applyDrawAssign()" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;flex:1;"></select>
+      <span style="font-size:11px;color:var(--muted);">Disziplin:</span>
+      <select id="draw-disc-sel" onchange="applyDrawAssign()" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;">
+        <option value="legen">Legen</option>
+        <option value="schiessen">Schießen</option>
+        <option value="sonstiges">Sonstiges</option>
+      </select>
+      <div id="draw-ath-badge" style="display:none;padding:3px 10px;border-radius:20px;background:rgba(0,200,160,.15);border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:600;white-space:nowrap;"></div>
+    </div>
+    <div id="draw-vid-info" style="display:none;font-size:10px;color:var(--muted);padding-top:4px;border-top:1px solid var(--border);">
+      <span id="draw-vid-name" style="color:var(--text);font-weight:600;"></span>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="draw-toolbar">
+    <span class="tl-label">Werkzeug:</span>
+    <button class="tool-btn on" id="tool-pen" onclick="setTool('pen',this)" title="Freihand">✏️</button>
+    <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow',this)" title="Pfeil">➡️</button>
+    <button class="tool-btn" id="tool-circle" onclick="setTool('circle',this)" title="Kreis/Bogen">⭕</button>
+    <button class="tool-btn" id="tool-line" onclick="setTool('line',this)" title="Linie">╱</button>
+    <button class="tool-btn" id="tool-erase" onclick="setTool('erase',this)" title="Radiergummi">🧹</button>
+    <div style="width:1px;height:20px;background:var(--border);margin:0 2px;"></div>
+    <span class="tl-label">Farbe:</span>
+    <div class="color-btn on" id="col-green" style="background:#00c8a0;" onclick="setColor('#00c8a0',this)" title="Hand/Kugel"></div>
+    <div class="color-btn" id="col-yellow" style="background:#f0a500;" onclick="setColor('#f0a500',this)" title="Ellbogen"></div>
+    <div class="color-btn" id="col-blue" style="background:#3b8cff;" onclick="setColor('#3b8cff',this)" title="Schulter/Arm"></div>
+    <div class="color-btn" id="col-red" style="background:#e24b4a;" onclick="setColor('#e24b4a',this)" title="Kugelbahn"></div>
+    <div class="color-btn" id="col-white" style="background:#ffffff;" onclick="setColor('#ffffff',this)" title="Weiß"></div>
+    <div style="width:1px;height:20px;background:var(--border);margin:0 2px;"></div>
+    <span class="tl-label">Stärke:</span>
+    <button class="size-btn on" id="sz-2" onclick="setSize(2,this)">S</button>
+    <button class="size-btn" id="sz-4" onclick="setSize(4,this)">M</button>
+    <button class="size-btn" id="sz-7" onclick="setSize(7,this)">L</button>
+    <div style="margin-left:auto;display:flex;gap:5px;">
+      <button onclick="undoStroke()" style="padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;">↩ Rückgängig</button>
+      <button onclick="clearDrawing()" style="padding:4px 9px;border-radius:6px;border:1px solid rgba(226,75,74,.3);background:transparent;color:var(--danger);font-size:11px;cursor:pointer;">✕ Alles löschen</button>
+      <button onclick="saveDrawing()" style="padding:4px 9px;border-radius:6px;border:none;background:var(--accent);color:#000;font-size:11px;font-weight:700;cursor:pointer;">💾 Speichern</button>
+      <button onclick="exportDrawingImage()" style="padding:4px 9px;border-radius:6px;border:1px solid var(--accent2);background:rgba(59,140,255,.1);color:var(--accent2);font-size:11px;cursor:pointer;">📷 Als Bild</button>
+    </div>
+  </div>
+
+  <!-- VIDEO + DRAW CANVAS -->
+  <div class="draw-canvas-wrap" id="draw-wrap">
+    <div style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--muted);font-size:13px;padding:20px;text-align:center;" id="draw-placeholder">
+      Video aus Analyse laden oder oben "Anderes Video laden" tippen
+    </div>
+    <video id="draw-vid" playsinline style="display:none;width:100%;"></video>
+    <canvas id="draw-canvas" style="display:none;"></canvas>
+  </div>
+
+  <!-- VIDEO CONTROLS -->
+  <div class="sync-bar" id="draw-vid-ctrl" style="display:none;">
+    <button class="sbtn" onclick="drawVidToggle()">▶/⏸</button>
+    <button class="sbtn" onclick="drawVidSeek(-0.04)">◀</button>
+    <button class="sbtn" onclick="drawVidSeek(0.04)">▶|</button>
+    <button class="sbtn" onclick="drawVidSeek(-2)">-2s</button>
+    <button class="sbtn" onclick="drawVidSeek(2)">+2s</button>
+    <div class="tl" onclick="drawVidSeekClick(event)" style="flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:2px;cursor:pointer;">
+      <div class="tl-f" id="draw-tl" style="height:4px;background:var(--accent);border-radius:2px;width:0%;pointer-events:none;"></div>
+    </div>
+    <div class="tc" id="draw-tc" style="font-size:10px;color:var(--muted);min-width:56px;text-align:right;">0:00</div>
+  </div>
+
+  <!-- FARBCODE LEGENDE -->
+  <div class="draw-legend">
+    <span style="font-size:11px;color:var(--muted);margin-right:4px;">Farbcode:</span>
+    <div class="leg-item"><div class="leg-dot" style="background:#00c8a0;"></div>Hand / Kugel</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f0a500;"></div>Ellbogen</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#3b8cff;"></div>Schulter / Arm</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#e24b4a;"></div>Kugelbahn</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#fff;border:1px solid #555;"></div>Allgemein</div>
+  </div>
+
+  <!-- GESPEICHERTE ZEICHNUNGEN -->
+  <div class="card">
+    <div class="card-title">Gespeicherte Zeichnungen</div>
+    <div id="drawing-list"><div style="font-size:12px;color:var(--muted);">Noch keine gespeicherten Zeichnungen</div></div>
+  </div>
+
+</div>
+
+<!-- MODAL: Athlet anlegen/bearbeiten -->
+<div class="modal-bg" id="ath-modal">
+  <div class="modal">
+    <h3 id="ath-modal-title">Neuer Athlet</h3>
+    <input type="hidden" id="m-id">
+    <div class="form-row"><label>Name</label><input type="text" id="m-name" placeholder="z.B. Klaus Müller"></div>
+    <div class="form-row"><label>Spielklasse</label><select id="m-level"><option>Anfänger</option><option>Fortgeschritten</option><option>Vereinsspieler</option><option>Turnierspieler</option><option>Profi</option></select></div>
+    <div class="form-row"><label>Bevorzugte Disziplin</label><select id="m-tech"><option value="legen">Legen</option><option value="schiessen">Schießen</option><option value="beides">Beides</option></select></div>
+
+    <div class="modal-divider">Individuelle Winkel-Vorgaben (überschreibt globale Werte)</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Leer lassen = globale Standardwerte verwenden</div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:5px;">Legen</div>
+    <div class="angle-grid">
+      <div class="angle-field"><label>Handgelenk°</label><input type="number" id="m-lw" placeholder="45" min="0" max="180"></div>
+      <div class="angle-field"><label>Ellbogen°</label><input type="number" id="m-le" placeholder="35" min="0" max="180"></div>
+      <div class="angle-field"><label>Schulter°</label><input type="number" id="m-ls" placeholder="55" min="0" max="180"></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--accent2);margin-bottom:5px;margin-top:6px;">Schießen</div>
+    <div class="angle-grid">
+      <div class="angle-field"><label>Handgelenk°</label><input type="number" id="m-sw" placeholder="30" min="0" max="180"></div>
+      <div class="angle-field"><label>Ellbogen°</label><input type="number" id="m-se" placeholder="50" min="0" max="180"></div>
+      <div class="angle-field"><label>Schulter°</label><input type="number" id="m-ss" placeholder="80" min="0" max="180"></div>
+    </div>
+    <div class="modal-btns"><button class="modal-cancel" onclick="closeAthleteModal()">Abbrechen</button><button class="modal-ok" onclick="saveAthlete()">Speichern</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Speichern mit Zuordnung -->
+<div class="modal-bg" id="save-modal">
+  <div class="modal">
+    <h3>Analyse speichern</h3>
+    <div class="form-row"><label>Athlet</label><select id="save-ath" class="form-row input" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:6px 8px;width:100%;"></select></div>
+    <div class="form-row"><label>Disziplin</label>
+      <select id="save-disc" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:6px 8px;width:100%;">
+        <option value="legen">Legen</option>
+        <option value="schiessen">Schießen</option>
+        <option value="sonstiges">Sonstiges</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Notizen</label><textarea id="save-notes" placeholder="z.B. Armschwung verbessert, Handgelenk noch zu stark..." style="min-height:55px;"></textarea></div>
+    <div class="modal-btns"><button class="modal-cancel" onclick="closeSaveModal()">Abbrechen</button><button class="modal-ok" onclick="confirmSave()">Speichern</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
+<script>
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+function stor(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
+function stor_s(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+let athletes = stor('pc_ath')||[];
+let sessions  = stor('pc_sess')||[];
+let mediaVids = stor('pc_media')||[]; // metadata only, no blob
+let globalSettings = stor('pc_settings')||{legen:{w:45,e:35,s:55,tol:8},schiessen:{w:30,e:50,s:80,tol:8}};
+let mediaFilter='alle', histFilter='alle', soloMode=null;
+let overlays={skeleton:true,angles:true,lines:true,arc:true,ball:false};
+let lastAth=null, lastRef=null, currentScore=0, currentAthId=null, speed=0.5;
+let poseModel=null, poseReady=false;
+
+const COLORS=['rgba(0,200,160,.2)','rgba(59,140,255,.2)','rgba(240,165,0,.2)','rgba(212,83,126,.2)','rgba(99,153,34,.2)'];
+const CTEXT=['#00c8a0','#3b8cff','#f0a500','#D4537E','#639922'];
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+async function initPose(){
+  poseModel=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
+  poseModel.setOptions({modelComplexity:1,smoothLandmarks:false,minDetectionConfidence:.5,minTrackingConfidence:.5});
+  poseReady=true;
+}
+initPose();
+loadGlobalSettings();
+renderAthletes();
+renderHistory();
+renderMedia();
+updateAllAthleteSelects();
+
+// ── NAV ──────────────────────────────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+}
+
+// ── GLOBAL SETTINGS ───────────────────────────────────────────────────────────
+function loadGlobalSettings(){
+  const gs=globalSettings;
+  ['legen','schiessen'].forEach(d=>{
+    ['w','e','s','tol'].forEach(k=>{
+      const el=document.getElementById(`g-${d}-${k}`);
+      if(el&&gs[d]&&gs[d][k]!=null)el.value=gs[d][k];
+    });
+  });
+}
+function saveGlobalSettings(){
+  globalSettings={
+    legen:{w:+v('g-legen-w'),e:+v('g-legen-e'),s:+v('g-legen-s'),tol:+v('g-legen-tol')},
+    schiessen:{w:+v('g-schiessen-w'),e:+v('g-schiessen-e'),s:+v('g-schiessen-s'),tol:+v('g-schiessen-tol')}
+  };
+  stor_s('pc_settings',globalSettings);
+}
+function v(id){return document.getElementById(id)?.value||0;}
+
+function getTgt(disc){
+  // Use athlete overrides if set, else global
+  const ath=athletes.find(a=>a.id===currentAthId);
+  const gs=globalSettings;
+  const d=disc==='schiessen'?'schiessen':'legen';
+  if(ath&&ath.angles&&ath.angles[d]){
+    const o=ath.angles[d];
+    return {w:o.w||gs[d].w, e:o.e||gs[d].e, s:o.s||gs[d].s, tol:gs[d].tol};
+  }
+  return gs[d]||{w:45,e:35,s:55,tol:8};
+}
+
+// ── LAYOUT ───────────────────────────────────────────────────────────────────
+function setSolo(who,btn){
+  const row=document.getElementById('vid-row');
+  if(soloMode===who){
+    soloMode=null; row.classList.remove('solo'); row.classList.add('sbs');
+    document.getElementById('panel-ath').style.display='';
+    document.getElementById('panel-ref').style.display='';
+    document.getElementById('solo-ath').textContent='Vollbild';
+    document.getElementById('solo-ath').classList.remove('on');
+    document.getElementById('solo-ref').textContent='Vollbild';
+    document.getElementById('solo-ref').classList.remove('on');
+  } else {
+    soloMode=who; row.classList.remove('sbs'); row.classList.add('solo');
+    document.getElementById('panel-ath').style.display=who==='ath'?'':'none';
+    document.getElementById('panel-ref').style.display=who==='ref'?'':'none';
+    document.getElementById('solo-'+who).textContent='Zurück';
+    document.getElementById('solo-'+who).classList.add('on');
+    document.getElementById('solo-'+(who==='ath'?'ref':'ath')).textContent='Vollbild';
+    document.getElementById('solo-'+(who==='ath'?'ref':'ath')).classList.remove('on');
+  }
+}
+
+function toggleOL(key,btn){overlays[key]=!overlays[key];btn.classList.toggle('on',overlays[key]);}
+
+// ── VIDEO LOADING ─────────────────────────────────────────────────────────────
+function loadVid(evt,who){
+  const file=evt.target.files[0]; if(!file)return;
+  const vid=document.getElementById(who+'-vid');
+  vid.src=URL.createObjectURL(file); vid.playbackRate=speed;
+  vid.style.display='block';
+  document.getElementById(who+'-cvs').style.display='block';
+  document.getElementById(who+'-upload').style.display='none';
+  document.getElementById(who+'-ctrl').style.display='flex';
+  const fi=document.getElementById(who+'-fileinfo'); fi.style.display='flex';
+  document.getElementById(who+'-fname').textContent=file.name.length>34?file.name.slice(0,31)+'...':file.name;
+  const mb=(file.size/1024/1024).toFixed(1);
+  const dt=file.lastModified?new Date(file.lastModified).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  document.getElementById(who+'-fmeta').textContent=mb+' MB · '+dt;
+  document.getElementById(who+'-assign').style.display='flex';
+  // Pre-select current athlete
+  const sel=document.getElementById(who+'-vas-ath');
+  if(currentAthId) sel.value=currentAthId;
+  vid.ontimeupdate=()=>{if(!vid.duration)return;document.getElementById(who+'-tl').style.width=(vid.currentTime/vid.duration*100)+'%';document.getElementById(who+'-tc').textContent=fmt(vid.currentTime)+'/'+fmt(vid.duration);};
+  vid.onended=()=>document.getElementById(who+'-pb').textContent='▶';
+  // Add to media library (metadata)
+  addToMedia(file,who);
+}
+
+function updateVidAssign(who){
+  const athId=+document.getElementById(who+'-vas-ath').value||null;
+  const disc=document.getElementById(who+'-vas-disc').value;
+  if(who==='ath'){currentAthId=athId;updateSel(athletes.find(a=>a.id===athId));}
+  // Update media entry if exists
+  const fname=document.getElementById(who+'-fname').textContent;
+  const m=mediaVids.find(x=>x.name===fname||x.name.startsWith(fname.replace('...','').slice(0,20)));
+  if(m){m.athleteId=athId;m.disc=disc;stor_s('pc_media',mediaVids);}
+}
+
+function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');}
+function togglePlay(who){const v=document.getElementById(who+'-vid'),b=document.getElementById(who+'-pb');v.paused?(v.play(),b.textContent='⏸'):(v.pause(),b.textContent='▶');}
+function seekRel(who,s){const v=document.getElementById(who+'-vid');v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+s));}
+function seekClick(evt,who){const v=document.getElementById(who+'-vid');if(!v.duration)return;const r=evt.currentTarget.getBoundingClientRect();v.currentTime=((evt.clientX-r.left)/r.width)*v.duration;}
+function syncPlay(){['ath','ref'].forEach(w=>{const v=document.getElementById(w+'-vid');if(v.src){v.playbackRate=speed;v.play();document.getElementById(w+'-pb').textContent='⏸';}});}
+function syncPause(){['ath','ref'].forEach(w=>{const v=document.getElementById(w+'-vid');if(v.src){v.pause();document.getElementById(w+'-pb').textContent='▶';}});}
+function syncReset(){['ath','ref'].forEach(w=>{const v=document.getElementById(w+'-vid');if(v.src){v.pause();v.currentTime=0;document.getElementById(w+'-pb').textContent='▶';}});}
+function setSpd(s,btn){speed=s;document.querySelectorAll('.spd').forEach(b=>b.classList.remove('on'));btn.classList.add('on');['ath','ref'].forEach(w=>{const v=document.getElementById(w+'-vid');if(v.src)v.playbackRate=s;});}
+
+// ── MEDIA LIBRARY ─────────────────────────────────────────────────────────────
+function addToMedia(file,role,displayName){
+  const mname=displayName||file.name;
+  if(mediaVids.find(m=>m.name===mname&&m.size===file.size))return;
+  mediaVids.unshift({id:Date.now(),name:mname,size:file.size,lastModified:file.lastModified,role,athleteId:currentAthId,disc:'legen',added:new Date().toLocaleDateString('de-DE')});
+  stor_s('pc_media',mediaVids);
+  renderMedia();
+}
+
+function addMediaVideos(evt){
+  Array.from(evt.target.files).forEach(f=>addToMedia(f,'media'));
+}
+
+function filterMedia(val,btn){
+  mediaFilter=val;
+  document.querySelectorAll('.mfbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderMedia();
+}
+
+function renderMedia(){
+  const el=document.getElementById('media-grid');
+  let filtered=mediaVids;
+  if(mediaFilter==='unzugeordnet') filtered=mediaVids.filter(m=>!m.athleteId);
+  else if(mediaFilter!=='alle') filtered=mediaVids.filter(m=>m.disc===mediaFilter);
+  if(!filtered.length){el.innerHTML='<div class="placeholder" style="grid-column:1/-1">Keine Videos in dieser Kategorie</div>';return;}
+  el.innerHTML=filtered.map(m=>{
+    const ath=athletes.find(a=>a.id===m.athleteId);
+    const mb=(m.size/1024/1024).toFixed(1);
+    const discClass={'legen':'disc-legen','schiessen':'disc-schiessen','sonstiges':'disc-sonstiges'}[m.disc]||'disc-sonstiges';
+    const discLabel={'legen':'Legen','schiessen':'Schießen','sonstiges':'Sonstiges'}[m.disc]||'—';
+    const athOpts='<option value="">—</option>'+athletes.map(a=>`<option value="${a.id}"${m.athleteId===a.id?' selected':''}>${a.name}</option>`).join('');
+    const discOpts=['legen','schiessen','sonstiges'].map(d=>`<option value="${d}"${m.disc===d?' selected':''}>${{legen:'Legen',schiessen:'Schießen',sonstiges:'Sonstiges'}[d]}</option>`).join('');
+    return`<div class="media-card">
+      <div class="media-thumb">
+        <span>🎬</span>
+        <div class="media-disc-badge ${discClass}">${discLabel}</div>
+      </div>
+      <div class="media-info">
+        <div class="media-name">${m.name}</div>
+        <div class="media-meta">${mb} MB · ${m.added||''}${ath?' · '+ath.name:''}</div>
+        <div class="media-assign-row">
+          <select class="mas" onchange="assignMedia(${m.id},'ath',this.value)">${athOpts}</select>
+          <select class="mas" onchange="assignMedia(${m.id},'disc',this.value)">${discOpts}</select>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:5px;">
+        <button class="load-to-btn" style="flex:1;" onclick="renameMedia(${m.id})">✏ Umbenennen</button>
+        <button class="load-to-btn" style="flex:1;border-color:rgba(226,75,74,.3);color:var(--danger);" onclick="deleteMedia(${m.id})">🗑 Entfernen</button>
+      </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function assignMedia(id,field,val){
+  const m=mediaVids.find(x=>x.id===id);
+  if(!m)return;
+  if(field==='ath') m.athleteId=val?+val:null;
+  else m.disc=val;
+  stor_s('pc_media',mediaVids);
+  renderMedia();
+}
+
+function deleteMedia(id){
+  mediaVids=mediaVids.filter(m=>m.id!==id);
+  stor_s('pc_media',mediaVids);
+  renderMedia();
+}
+
+// ── POSE ANALYSIS ─────────────────────────────────────────────────────────────
+async function analyzeFrame(){
+  if(!poseReady){alert('Pose-Modell lädt noch…');return;}
+  const av=document.getElementById('ath-vid');
+  if(!av.src){alert('Bitte zuerst ein Athleten-Video laden.');return;}
+  syncPause();
+  const disc=document.getElementById('ath-vas-disc')?.value||'legen';
+  lastAth=await detectPose(av,'ath-cvs',disc);
+  const rv=document.getElementById('ref-vid');
+  const rdisc=document.getElementById('ref-vas-disc')?.value||disc;
+  lastRef=rv.src?await detectPose(rv,'ref-cvs',rdisc):null;
+  showAnalysis(disc);
+}
+
+async function detectPose(videoEl,canvasId,disc){
+  return new Promise(resolve=>{
+    const canvas=document.getElementById(canvasId);
+    canvas.width=videoEl.videoWidth||640; canvas.height=videoEl.videoHeight||360;
+    poseModel.onResults(results=>{
+      const ctx=canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(!results.poseLandmarks){resolve(null);return;}
+      const lm=results.poseLandmarks,W=canvas.width,H=canvas.height;
+      if(overlays.skeleton){
+        [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26]].forEach(([a,b])=>{
+          const A=lm[a],B=lm[b];if(!A||!B||A.visibility<.25||B.visibility<.25)return;
+          ctx.beginPath();ctx.moveTo(A.x*W,A.y*H);ctx.lineTo(B.x*W,B.y*H);ctx.strokeStyle='rgba(0,200,160,.6)';ctx.lineWidth=2.5;ctx.stroke();
+        });
+        [11,12,13,14,15,16,23,24].forEach(i=>{const p=lm[i];if(!p||p.visibility<.25)return;ctx.beginPath();ctx.arc(p.x*W,p.y*H,4,0,Math.PI*2);ctx.fillStyle=(i===14||i===16)?'#f0a500':(i===12||i===11)?'#3b8cff':'#00c8a0';ctx.fill();});
+      }
+      const wr=lm[16],el=lm[14],sh=lm[12],hi=lm[24];
+      if(!wr||!el||!sh||!hi||wr.visibility<.3||el.visibility<.3||sh.visibility<.3){resolve(null);return;}
+      const wA=ang(el,wr,{x:wr.x,y:wr.y-.1}),eA=ang(sh,el,wr),sA=ang(hi,sh,el);
+      if(overlays.lines){
+        drawAxisLine(ctx,sh,el,W,H,'rgba(59,140,255,.45)',2);
+        drawAxisLine(ctx,el,wr,W,H,'rgba(240,165,0,.45)',2);
+        const wExt={x:wr.x+(wr.x-el.x)*0.4,y:wr.y+(wr.y-el.y)*0.4};
+        ctx.beginPath();ctx.moveTo(wr.x*W,wr.y*H);ctx.lineTo(wExt.x*W,wExt.y*H);
+        ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(240,165,0,.5)';ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);
+        ctx.beginPath();ctx.moveTo(sh.x*W,sh.y*H);ctx.lineTo(sh.x*W,(sh.y+.35)*H);
+        ctx.setLineDash([3,5]);ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1;ctx.stroke();ctx.setLineDash([]);
+      }
+      if(overlays.arc){drawArc(ctx,sh,el,wr,W,H,'#f0a500',38);drawArc(ctx,hi,sh,el,W,H,'#3b8cff',32);drawArc(ctx,el,wr,{x:wr.x,y:wr.y-.1},W,H,'#00c8a0',26);}
+      if(overlays.angles){
+        const t=getTgt(disc);
+        angleLbl(ctx,el,W,H,eA,t.e,t.tol,'Ellb.');
+        angleLbl(ctx,wr,W,H,wA,t.w,t.tol,'Handg.');
+        angleLbl(ctx,sh,W,H,sA,t.s,t.tol,'Schulter');
+      }
+      if(overlays.ball){ctx.beginPath();ctx.arc(wr.x*W,wr.y*H,8,0,Math.PI*2);ctx.fillStyle='rgba(255,220,60,.75)';ctx.fill();ctx.strokeStyle='rgba(255,200,0,.9)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='rgba(255,220,60,.9)';ctx.font='bold 10px sans-serif';ctx.fillText('Kugel',wr.x*W+10,wr.y*H-5);}
+      resolve({wrist:wA,elbow:eA,shoulder:sA});
+    });
+    poseModel.send({image:videoEl});
+  });
+}
+
+function drawAxisLine(ctx,A,B,W,H,color,lw){const dx=B.x-A.x,dy=B.y-A.y,ext=0.28;ctx.beginPath();ctx.moveTo((A.x-dx*ext)*W,(A.y-dy*ext)*H);ctx.lineTo((B.x+dx*ext)*W,(B.y+dy*ext)*H);ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.stroke();}
+function drawArc(ctx,A,B,C,W,H,color,r){const bx=B.x*W,by=B.y*H,a1=Math.atan2((A.y-B.y)*H,(A.x-B.x)*W),a2=Math.atan2((C.y-B.y)*H,(C.x-B.x)*W);ctx.beginPath();ctx.arc(bx,by,r,a1,a2,false);ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.moveTo(bx,by);ctx.arc(bx,by,r,a1,a2,false);ctx.closePath();ctx.fillStyle=color+'28';ctx.fill();}
+function angleLbl(ctx,lm,W,H,deg,target,tol,name){
+  const x=lm.x*W+10,y=lm.y*H-10;
+  const diff=Math.abs(deg-target);
+  const color=diff<=tol?'#00c8a0':diff<tol*2.5?'#f0a500':'#e24b4a';
+  const txt=name+': '+deg+'°';
+  ctx.font='bold 12px sans-serif';
+  const tw=ctx.measureText(txt).width+10;
+  ctx.fillStyle='rgba(13,17,23,.87)';
+  if(ctx.roundRect)ctx.roundRect(x-2,y-14,tw,18,3);else ctx.rect(x-2,y-14,tw,18);
+  ctx.fill();
+  ctx.fillStyle=color;ctx.fillText(txt,x+3,y);
+  ctx.fillStyle='rgba(255,255,255,.38)';ctx.font='10px sans-serif';ctx.fillText('→'+target+'°',x+3,y+11);
+}
+function ang(A,B,C){const ax=A.x-B.x,ay=A.y-B.y,cx=C.x-B.x,cy=C.y-B.y;const dot=ax*cx+ay*cy,mag=Math.sqrt((ax*ax+ay*ay)*(cx*cx+cy*cy));return mag===0?0:Math.round(Math.acos(Math.max(-1,Math.min(1,dot/mag)))*180/Math.PI);}
+
+// ── SHOW ANALYSIS ─────────────────────────────────────────────────────────────
+function showAnalysis(disc){
+  const t=getTgt(disc||'legen'),ath=lastAth,ref=lastRef;
+  if(!ath){document.getElementById('metrics-area').innerHTML='<div class="placeholder" style="grid-column:1/-1">Keine Person erkannt — anderen Frame wählen</div>';return;}
+  const vals=[ath.wrist,ath.elbow,ath.shoulder],tgts=[t.w,t.e,t.s];
+  const cls=vals.map((v,i)=>{const d=Math.abs(v-tgts[i]);return d<=t.tol?'g':d<t.tol*2.5?'w':'b';});
+  currentScore=Math.round(cls.filter(c=>c==='g').length*33+cls.filter(c=>c==='w').length*16);
+  document.getElementById('snum').textContent=currentScore+'%';
+  const ao=athletes.find(a=>a.id===currentAthId);
+  const discLabel={'legen':'Legen','schiessen':'Schießen','sonstiges':'Sonstiges'}[disc]||disc;
+  document.getElementById('ssub').textContent=(ao?ao.name+' · ':'')+discLabel;
+  const arc=document.getElementById('sarc');arc.style.strokeDashoffset=163.4*(1-currentScore/100);arc.style.stroke=currentScore>=75?'#00c8a0':currentScore>=50?'#f0a500':'#e24b4a';
+  const names=['Handgelenk','Ellbogen','Schulter'];
+  let html='<div class="card"><div class="card-title">Athlet · Gemessene Winkel</div>';
+  vals.forEach((v,i)=>html+=`<div class="met"><div class="mh"><span class="mn">${names[i]}</span><div class="mv-r"><span class="mv ${cls[i]}">${v}°</span><span class="mv-ref">Ziel: ${tgts[i]}° ±${t.tol}°</span></div></div><div class="bbg"><div class="bf ${cls[i]}" style="width:${Math.min(100,Math.round(v/160*100))}%"></div></div></div>`);
+  html+='</div>';
+  if(ref){const rv=[ref.wrist,ref.elbow,ref.shoulder];html+='<div class="card"><div class="card-title">Referenz · Vergleich</div>';rv.forEach((v,i)=>{const diff=v-vals[i];html+=`<div class="met"><div class="mh"><span class="mn">${names[i]}</span><div class="mv-r"><span class="mv g">${v}°</span><span class="mv-ref">Diff: ${diff>0?'+':''}${diff}°</span></div></div><div class="bbg"><div class="bf g" style="width:${Math.min(100,Math.round(v/160*100))}%"></div></div></div>`;});html+='</div>';}
+  const msgs=[];
+  const fhints={legen:{w:['Handgelenk lockerer — Kugel soll abrollen','Mehr Beugung für bessere Führung'],e:['Arm bis Hüfthöhe geschlossen halten','Ellbogen etwas mehr öffnen'],s:['Schulter ruhig — Bewegung aus dem Unterarm','Schulter etwas mehr einbeziehen']},schiessen:{w:['Handgelenk gestreckter für Kontrolle','Mehr Beugung für Effet'],e:['Ellbogen weiter für Wurfkraft','Ellbogen enger für Präzision'],s:['Schulter stärker einsetzen','Schulter weniger — Genauigkeit vor Kraft']},sonstiges:{w:['Handgelenk anpassen','Handgelenk anpassen'],e:['Ellbogen anpassen','Ellbogen anpassen'],s:['Schulter anpassen','Schulter anpassen']}};
+  const hk=fhints[disc]||fhints.legen;
+  const hkeys=['w','e','s'];
+  vals.forEach((v,i)=>{if(cls[i]!=='g'){const d=v-tgts[i];msgs.push({c:cls[i],t:`${names[i]}: ${v}° (${d>0?'+':''}${d}° vom Ziel)`,h:hk[hkeys[i]][d>0?0:1]});}});
+  if(cls.every(c=>c==='g'))msgs.push({c:'g',t:'Ausgezeichnete Technik!',h:'Alle Winkel im Zielbereich'});
+  if(ref){const rv=[ref.wrist,ref.elbow,ref.shoulder];vals.forEach((v,i)=>{const d=rv[i]-v;if(Math.abs(d)>10)msgs.push({c:'w',t:`${names[i]} ${Math.abs(d)}° ${d>0?'kleiner':'größer'} als Referenz`,h:'Referenz als Orientierung nutzen'});});}
+  html+='<div class="card" style="grid-column:1/-1"><div class="card-title">Coaching-Feedback</div>'+msgs.map(m=>`<div class="fbi"><div class="fbd ${m.c}"></div><div class="fbt"><strong>${m.t}</strong> — ${m.h}</div></div>`).join('')+'</div>';
+  document.getElementById('metrics-area').innerHTML=html;
+}
+
+// ── SAVE MODAL ───────────────────────────────────────────────────────────────
+function openSaveModal(){
+  if(!lastAth){alert('Bitte erst einen Frame analysieren.');return;}
+  const sel=document.getElementById('save-ath');
+  sel.innerHTML='<option value="">— Kein Athlet —</option>'+athletes.map(a=>`<option value="${a.id}"${a.id===currentAthId?' selected':''}>${a.name}</option>`).join('');
+  const disc=document.getElementById('ath-vas-disc')?.value||'legen';
+  document.getElementById('save-disc').value=disc;
+  document.getElementById('save-notes').value='';
+  document.getElementById('save-modal').classList.add('open');
+}
+function closeSaveModal(){document.getElementById('save-modal').classList.remove('open');}
+function confirmSave(){
+  const athId=+document.getElementById('save-ath').value||null;
+  const disc=document.getElementById('save-disc').value;
+  const note=document.getElementById('save-notes').value.trim();
+  const ath=athletes.find(a=>a.id===athId);
+  const sess={id:Date.now(),athleteId:athId,athleteName:ath?ath.name:'Unbekannt',date:new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}),time:new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}),disc,score:currentScore,wrist:lastAth.wrist,elbow:lastAth.elbow,shoulder:lastAth.shoulder,refWrist:lastRef?.wrist||null,refElbow:lastRef?.elbow||null,refShoulder:lastRef?.shoulder||null,note};
+  sessions.unshift(sess);stor_s('pc_sess',sessions);
+  if(ath){ath.lastScore=currentScore;ath.sessions=(ath.sessions||0)+1;stor_s('pc_ath',athletes);renderAthletes();}
+  renderHistory();closeSaveModal();alert('Analyse gespeichert!');
+}
+
+// ── ATHLETES ─────────────────────────────────────────────────────────────────
+function openAthleteModal(id){
+  const ath=id?athletes.find(a=>a.id===id):null;
+  document.getElementById('ath-modal-title').textContent=ath?'Athlet bearbeiten':'Neuer Athlet';
+  document.getElementById('m-id').value=id||'';
+  document.getElementById('m-name').value=ath?.name||'';
+  document.getElementById('m-level').value=ath?.level||'Anfänger';
+  document.getElementById('m-tech').value=ath?.tech||'legen';
+  ['lw','le','ls','sw','se','ss'].forEach(k=>{
+    const el=document.getElementById('m-'+k);
+    const disc=k[0]==='l'?'legen':'schiessen',wk=k[1];
+    el.value=ath?.angles?.[disc]?.[wk]||'';
+  });
+  document.getElementById('m-name').focus();
+  document.getElementById('ath-modal').classList.add('open');
+}
+function closeAthleteModal(){document.getElementById('ath-modal').classList.remove('open');}
+function saveAthlete(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name){alert('Name eingeben.');return;}
+  const id=+document.getElementById('m-id').value||null;
+  const angles={legen:{w:+document.getElementById('m-lw').value||null,e:+document.getElementById('m-le').value||null,s:+document.getElementById('m-ls').value||null},schiessen:{w:+document.getElementById('m-sw').value||null,e:+document.getElementById('m-se').value||null,s:+document.getElementById('m-ss').value||null}};
+  if(id){const a=athletes.find(x=>x.id===id);if(a){a.name=name;a.level=document.getElementById('m-level').value;a.tech=document.getElementById('m-tech').value;a.angles=angles;}}
+  else athletes.push({id:Date.now(),name,level:document.getElementById('m-level').value,tech:document.getElementById('m-tech').value,angles,colorIdx:athletes.length%COLORS.length,sessions:0,lastScore:null});
+  stor_s('pc_ath',athletes);renderAthletes();updateAllAthleteSelects();closeAthleteModal();
+}
+function deleteAthlete(id){if(!confirm('Athlet löschen?'))return;athletes=athletes.filter(a=>a.id!==id);stor_s('pc_ath',athletes);if(currentAthId===id){currentAthId=null;updateSel(null);}renderAthletes();updateAllAthleteSelects();}
+function selectAthlete(id){
+  currentAthId=id;
+  const ath=athletes.find(a=>a.id===id);
+  updateSel(ath);
+  renderAthletes();
+  updateQuickStart(ath);
+  showPage('analyse',document.querySelectorAll('.navbtn')[0]);
+}
+
+function updateQuickStart(ath){
+  const el=document.getElementById('quick-start');
+  if(!el)return;
+  if(!ath){el.style.display='none';return;}
+  const ci=ath.colorIdx||0;
+  const discLabel={legen:'Legen',schiessen:'Schießen',beides:'Legen & Schießen'}[ath.tech]||ath.tech;
+  el.style.display='flex';
+  el.style.borderColor=CTEXT[ci];
+  document.getElementById('qs-avatar').textContent=ath.name.charAt(0).toUpperCase();
+  document.getElementById('qs-avatar').style.background=COLORS[ci];
+  document.getElementById('qs-avatar').style.color=CTEXT[ci];
+  document.getElementById('qs-name').textContent=ath.name+' — bereit für Aufnahme';
+  document.getElementById('qs-sub').textContent=discLabel+' · '+new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  document.getElementById('qs-btn').style.background=CTEXT[ci];
+  // Pre-select discipline
+  const disc=ath.tech==='schiessen'?'schiessen':ath.tech==='beides'?'legen':'legen';
+  const vasDisc=document.getElementById('ath-vas-disc');
+  if(vasDisc)vasDisc.value=disc;
+}
+function updateSel(ath){
+  if(!ath){document.getElementById('sel-avatar').textContent='?';document.getElementById('sel-name').textContent='Kein Athlet';document.getElementById('sel-sub').textContent='Unter "Athleten" auswählen';return;}
+  const ci=ath.colorIdx||0;const av=document.getElementById('sel-avatar');
+  av.textContent=ath.name.charAt(0).toUpperCase();av.style.background=COLORS[ci];av.style.color=CTEXT[ci];av.style.borderColor=CTEXT[ci];
+  document.getElementById('sel-name').textContent=ath.name;
+  document.getElementById('sel-sub').textContent=ath.level+' · '+({legen:'Legen',schiessen:'Schießen',beides:'Beides'}[ath.tech]||ath.tech)+(ath.sessions?' · '+ath.sessions+' Analysen':'');
+}
+function renderAthletes(){
+  const el=document.getElementById('athlete-list');
+  if(!athletes.length){el.innerHTML='<div class="placeholder">Noch keine Athleten — tippe auf "+ Neu"</div>';return;}
+  el.innerHTML=athletes.map(a=>{const ci=a.colorIdx||0;const hasCustom=a.angles&&(Object.values(a.angles.legen||{}).some(v=>v)||Object.values(a.angles.schiessen||{}).some(v=>v));return`<div class="athlete-card ${currentAthId===a.id?'selected':''}" onclick="selectAthlete(${a.id})"><div class="ac-av" style="background:${COLORS[ci]};color:${CTEXT[ci]};border:1px solid ${CTEXT[ci]}">${a.name.charAt(0).toUpperCase()}</div><div class="ac-info"><div class="ac-name">${a.name}</div><div class="ac-meta">${a.level} · ${{legen:'Legen',schiessen:'Schießen',beides:'Beides'}[a.tech]||a.tech} · ${a.sessions||0} Analysen${hasCustom?' · <span style="color:var(--accent)">eigene Vorgaben</span>':''}</div></div><div class="ac-score" style="color:${!a.lastScore?'var(--muted)':a.lastScore>=75?'#00c8a0':a.lastScore>=50?'#f0a500':'#e24b4a'}">${a.lastScore!=null?a.lastScore+'%':'—'}</div><div class="ac-btns"><button class="edit-btn" onclick="event.stopPropagation();openAthleteModal(${a.id})">✎ Edit</button><button class="del-btn" onclick="event.stopPropagation();deleteAthlete(${a.id})">✕</button></div></div>`;}).join('');
+}
+function updateAllAthleteSelects(){
+  updateDrawAthleteSelect();
+  const opts='<option value="">— Kein Athlet —</option>'+athletes.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  ['ath-vas-ath','ref-vas-ath'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts;});
+  if(currentAthId){['ath-vas-ath','ref-vas-ath'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=currentAthId;});}
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────────────────
+function filterHist(val,btn){histFilter=val;document.querySelectorAll('.hfbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderHistory();}
+function renderHistory(){
+  const f=document.getElementById('hist-filter');
+  f.innerHTML='<button class="hfbtn '+(histFilter==='alle'?'on':'')+'" onclick="filterHist(\'alle\',this)">Alle</button>'+['legen','schiessen','sonstiges'].map(d=>`<button class="hfbtn ${histFilter===d?'on':''}" onclick="filterHist('${d}',this)">${{legen:'Legen',schiessen:'Schießen',sonstiges:'Sonstiges'}[d]}</button>`).join('')+athletes.map(a=>`<button class="hfbtn ${histFilter==a.id?'on':''}" onclick="filterHist(${a.id},this)">${a.name}</button>`).join('');
+  const el=document.getElementById('hist-list');
+  let filtered=sessions;
+  if(histFilter==='alle'){}
+  else if(['legen','schiessen','sonstiges'].includes(histFilter))filtered=sessions.filter(s=>s.disc===histFilter);
+  else filtered=sessions.filter(s=>s.athleteId==histFilter);
+  if(!filtered.length){el.innerHTML='<div class="placeholder">Keine Analysen in dieser Kategorie</div>';return;}
+  const discColor={'legen':'rgba(0,200,160,.15)','schiessen':'rgba(59,140,255,.15)','sonstiges':'rgba(240,165,0,.15)'};
+  const discText={'legen':'#00c8a0','schiessen':'#3b8cff','sonstiges':'#f0a500'};
+  const discLabel={'legen':'Legen','schiessen':'Schießen','sonstiges':'Sonstiges'};
+  el.innerHTML=filtered.map(s=>{const sc=s.score>=75?'#00c8a0':s.score>=50?'#f0a500':'#e24b4a';const dc=discColor[s.disc]||discColor.sonstiges;const dt=discText[s.disc]||'#8b949e';const dl=discLabel[s.disc]||s.disc;return`<div class="hist-card"><div class="hc-top"><div class="hc-name"><span class="disc-chip" style="background:${dc};color:${dt}">${dl}</span>${s.athleteName}</div><div class="hc-score" style="color:${sc}">${s.score}%</div></div><div class="hc-meta">${s.date} ${s.time}</div><div class="hc-metrics"><div class="hc-m">Handg.: <span>${s.wrist}°</span></div><div class="hc-m">Ellb.: <span>${s.elbow}°</span></div><div class="hc-m">Schulter: <span>${s.shoulder}°</span></div>${s.refWrist?`<div class="hc-m">Ref: <span>${s.refWrist}°/${s.refElbow}°/${s.refShoulder}°</span></div>`:''}</div>${s.note?`<div class="hc-note">"${s.note}"</div>`:''}</div>`;}).join('');
+}
+
+// ── SETTINGS ACTIONS ──────────────────────────────────────────────────────────
+function clearSessions(){if(!confirm('Alle Analysen löschen?'))return;sessions=[];stor_s('pc_sess',sessions);renderHistory();alert('Analysen gelöscht.');}
+function clearAll(){if(!confirm('ALLE Daten löschen? (Profile + Analysen)'))return;athletes=[];sessions=[];mediaVids=[];stor_s('pc_ath',athletes);stor_s('pc_sess',sessions);stor_s('pc_media',mediaVids);renderAthletes();renderHistory();renderMedia();updateAllAthleteSelects();updateSel(null);alert('Alle Daten gelöscht.');}
+
+// ── PDF ──────────────────────────────────────────────────────────────────────
+function generatePDF(){
+  let filtered=sessions;
+  if(histFilter==='alle'){}
+  else if(['legen','schiessen','sonstiges'].includes(histFilter))filtered=sessions.filter(s=>s.disc===histFilter);
+  else filtered=sessions.filter(s=>s.athleteId==histFilter);
+  if(!filtered.length){alert('Keine Analysen vorhanden.');return;}
+  const label=histFilter==='alle'?'Alle':['legen','schiessen','sonstiges'].includes(histFilter)?{legen:'Legen',schiessen:'Schießen',sonstiges:'Sonstiges'}[histFilter]:athletes.find(a=>a.id==histFilter)?.name||'';
+  const avg=arr=>arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):0;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PétanqueCoach Report</title>
+<style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:26px;color:#222;}
+h1{color:#007a62;border-bottom:2px solid #007a62;padding-bottom:6px;font-size:19px;}
+h2{color:#444;margin-top:18px;font-size:14px;}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;}
+.sc{background:#f4f4f4;border-radius:7px;padding:9px;text-align:center;}
+.sc .v{font-size:19px;font-weight:bold;color:#007a62;}.sc .l{font-size:10px;color:#888;margin-top:2px;}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;}
+th{background:#007a62;color:white;padding:6px 8px;text-align:left;}
+td{padding:5px 8px;border-bottom:1px solid #eee;}
+tr:nth-child(even){background:#f9f9f9;}
+.g{color:#007a62;font-weight:bold;}.w{color:#c47a00;font-weight:bold;}.b{color:#c0392b;font-weight:bold;}
+.note{font-style:italic;color:#888;font-size:10px;}
+.chip{display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;}
+.cl{background:#d4f5ec;color:#007a62;}.cs{background:#d8e8fb;color:#2563a8;}.co{background:#fef3d0;color:#9a6200;}
+.footer{margin-top:22px;font-size:10px;color:#bbb;text-align:center;border-top:1px solid #eee;padding-top:8px;}
+
+/* DRAW PAGE */
+.draw-toolbar{background:var(--panel);border-radius:10px;border:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.draw-toolbar .tl-label{font-size:11px;color:var(--muted);}
+.tool-btn{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.tool-btn.on{border-color:var(--accent);background:rgba(0,200,160,.15);color:var(--accent);}
+.color-btn{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0;}
+.color-btn.on{border-color:#fff;transform:scale(1.2);}
+.size-btn{padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;}
+.size-btn.on{border-color:var(--accent);color:var(--accent);}
+.draw-canvas-wrap{position:relative;background:#000;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+.draw-canvas-wrap video{width:100%;display:block;}
+.draw-canvas-wrap canvas{position:absolute;inset:0;width:100%;height:100%;}
+#draw-canvas{cursor:crosshair;touch-action:none;}
+.draw-legend{background:var(--panel);border-radius:10px;border:1px solid var(--border);padding:8px 12px;display:flex;gap:10px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.leg-dot{width:10px;height:10px;border-radius:50%;}
+.layer-list{display:flex;flex-direction:column;gap:5px;}
+.layer-item{background:var(--panel);border-radius:7px;border:1px solid var(--border);padding:6px 10px;display:flex;align-items:center;gap:8px;}
+.layer-thumb{width:40px;height:22px;border-radius:4px;background:var(--panel2);border:1px solid var(--border);overflow:hidden;}
+.layer-name{font-size:11px;color:var(--text);flex:1;}
+.layer-vis{padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;}
+.layer-del{padding:2px 6px;border-radius:4px;border:1px solid rgba(226,75,74,.3);background:transparent;color:var(--danger);font-size:10px;cursor:pointer;}
+
+
+/* RENAME / NAME CONFIRM */
+.name-confirm-bar{background:var(--panel2);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.name-confirm-bar input{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:5px 8px;min-width:120px;}
+.name-confirm-bar .nc-label{font-size:11px;color:var(--muted);white-space:nowrap;}
+.name-confirm-btn{padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.name-cancel-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;}
+
+
+/* PWA INSTALL BANNER */
+#pwa-banner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #00c8a0;border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:300;box-shadow:0 4px 24px rgba(0,0,0,.5);max-width:360px;width:calc(100% - 32px);}
+#pwa-banner .pwa-icon{width:36px;height:36px;border-radius:8px;background:rgba(0,200,160,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+#pwa-banner .pwa-text{flex:1;font-size:12px;color:#e6edf3;}
+#pwa-banner .pwa-text strong{display:block;font-size:13px;margin-bottom:1px;}
+#pwa-banner .pwa-install{padding:6px 14px;border-radius:8px;border:none;background:#00c8a0;color:#000;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+#pwa-banner .pwa-close{padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#8b949e;font-size:12px;cursor:pointer;}
+#fs-bar{background:rgba(59,140,255,.1);border:1px solid rgba(59,140,255,.3);border-radius:8px;padding:6px 12px;display:none;align-items:center;gap:8px;font-size:11px;color:#3b8cff;}
+#fs-bar button{padding:3px 10px;border-radius:5px;border:1px solid rgba(59,140,255,.4);background:rgba(59,140,255,.15);color:#3b8cff;font-size:11px;cursor:pointer;white-space:nowrap;}
+
+</style></head><body>
+<h1>PétanqueCoach — Trainingsreport</h1>
+<p style="font-size:11px;color:#555;"><strong>Filter:</strong> ${label} &nbsp;|&nbsp; <strong>Erstellt:</strong> ${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} &nbsp;|&nbsp; <strong>Analysen:</strong> ${filtered.length}</p>
+<h2>Zusammenfassung</h2>
+<div class="sum">
+<div class="sc"><div class="v">${avg(filtered.map(s=>s.score))}%</div><div class="l">Ø Score</div></div>
+<div class="sc"><div class="v">${avg(filtered.map(s=>s.wrist))}°</div><div class="l">Ø Handgelenk</div></div>
+<div class="sc"><div class="v">${avg(filtered.map(s=>s.elbow))}°</div><div class="l">Ø Ellbogen</div></div>
+<div class="sc"><div class="v">${avg(filtered.map(s=>s.shoulder))}°</div><div class="l">Ø Schulter</div></div>
+</div>
+<h2>Alle Analysen</h2>
+<table><tr><th>Datum</th><th>Athlet</th><th>Disziplin</th><th>Score</th><th>Handg.</th><th>Ellb.</th><th>Schulter</th><th>Notiz</th></tr>
+${filtered.map(s=>{const sc=s.score>=75?'g':s.score>=50?'w':'b';const chip=s.disc==='legen'?'cl':s.disc==='schiessen'?'cs':'co';const dl={legen:'Legen',schiessen:'Schießen',sonstiges:'Sonstiges'}[s.disc]||s.disc;return`<tr><td>${s.date} ${s.time}</td><td>${s.athleteName}</td><td><span class="chip ${chip}">${dl}</span></td><td class="${sc}">${s.score}%</td><td>${s.wrist}°</td><td>${s.elbow}°</td><td>${s.shoulder}°</td><td class="note">${s.note||'—'}</td></tr>`;}).join('')}
+</table>
+<div class="footer">PétanqueCoach · Automatisch generierter Trainingsbericht</div>
+</body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);
+}
+
+// ── DRAWING TOOL ──────────────────────────────────────────────────────────────
+let drawTool='pen', drawColor='#00c8a0', drawSize=2;
+let drawCurrentAthId=null, drawCurrentDisc='legen';
+let isDrawing=false, drawStrokes=[], currentStroke=[];
+let drawStartX=0, drawStartY=0;
+let savedDrawings=stor('pc_drawings')||[];
+
+function setTool(t,btn){drawTool=t;document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function setColor(c,btn){drawColor=c;document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function setSize(s,btn){drawSize=s;document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+
+function loadDrawVideo(){
+  const who=document.getElementById('draw-vid-sel').value;
+  const src=document.getElementById(who+'-vid')?.src;
+  if(!src||src===''){alert('Kein Video geladen — bitte zuerst in der Analyse ein Video laden.');return;}
+  const dv=document.getElementById('draw-vid');
+  dv.src=src; dv.style.display='block';
+  document.getElementById('draw-placeholder').style.display='none';
+  // Auto-assign from analysis panel
+  const vasAth=document.getElementById(who+'-vas-ath');
+  const vasDisc=document.getElementById(who+'-vas-disc');
+  if(vasAth&&vasAth.value) document.getElementById('draw-ath-sel').value=vasAth.value;
+  if(vasDisc&&vasDisc.value) document.getElementById('draw-disc-sel').value=vasDisc.value;
+  const fname=document.getElementById(who+'-fname')?.textContent||'';
+  showDrawVidInfo(fname);
+  applyDrawAssign();
+  setupDrawCanvas();
+}
+
+function loadDrawExtVideo(evt){
+  const file=evt.target.files[0]; if(!file)return;
+  const dv=document.getElementById('draw-vid');
+  dv.src=URL.createObjectURL(file); dv.style.display='block';
+  document.getElementById('draw-placeholder').style.display='none';
+  showDrawVidInfo(file.name);
+  // Pre-select currently active athlete
+  if(currentAthId) document.getElementById('draw-ath-sel').value=currentAthId;
+  applyDrawAssign();
+  setupDrawCanvas();
+}
+
+function showDrawVidInfo(name){
+  const el=document.getElementById('draw-vid-info');
+  el.style.display='block';
+  document.getElementById('draw-vid-name').textContent=name.length>40?name.slice(0,37)+'...':name;
+}
+
+function applyDrawAssign(){
+  const athId=+document.getElementById('draw-ath-sel').value||null;
+  const disc=document.getElementById('draw-disc-sel').value;
+  const ath=athletes.find(a=>a.id===athId);
+  const badge=document.getElementById('draw-ath-badge');
+  const discLabel={legen:'Legen',schiessen:'Schießen',sonstiges:'Sonstiges'}[disc]||disc;
+  if(ath){
+    badge.style.display='block';
+    badge.textContent=ath.name+' · '+discLabel;
+    const ci=ath.colorIdx||0;
+    badge.style.background=COLORS[ci].replace('.2)','.15)');
+    badge.style.borderColor=CTEXT[ci];
+    badge.style.color=CTEXT[ci];
+  } else {
+    badge.style.display='none';
+  }
+  drawCurrentAthId=athId;
+  drawCurrentDisc=disc;
+}
+
+function updateDrawAthleteSelect(){
+  const sel=document.getElementById('draw-ath-sel');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Kein Athlet —</option>'+athletes.map(a=>`<option value="${a.id}"${a.id===currentAthId?' selected':''}>${a.name}</option>`).join('');
+}
+
+function setupDrawCanvas(){
+  const dv=document.getElementById('draw-vid');
+  const dc=document.getElementById('draw-canvas');
+  const ctrl=document.getElementById('draw-vid-ctrl');
+  dv.onloadedmetadata=()=>{
+    dc.width=dv.videoWidth||640; dc.height=dv.videoHeight||360;
+    dc.style.display='block'; ctrl.style.display='flex';
+    redrawAll();
+  };
+  dv.ontimeupdate=()=>{
+    if(!dv.duration)return;
+    document.getElementById('draw-tl').style.width=(dv.currentTime/dv.duration*100)+'%';
+    document.getElementById('draw-tc').textContent=fmt(dv.currentTime)+'/'+fmt(dv.duration);
+    redrawAll();
+  };
+  setupDrawEvents();
+}
+
+function drawVidToggle(){const v=document.getElementById('draw-vid');v.paused?v.play():v.pause();}
+function drawVidSeek(s){const v=document.getElementById('draw-vid');v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+s));}
+function drawVidSeekClick(evt){const v=document.getElementById('draw-vid');if(!v.duration)return;const r=evt.currentTarget.getBoundingClientRect();v.currentTime=((evt.clientX-r.left)/r.width)*v.duration;}
+
+function getPos(evt,canvas){
+  const r=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/r.width, scaleY=canvas.height/r.height;
+  const src=evt.touches?evt.touches[0]:evt;
+  return {x:(src.clientX-r.left)*scaleX, y:(src.clientY-r.top)*scaleY};
+}
+
+function setupDrawEvents(){
+  const dc=document.getElementById('draw-canvas');
+  dc.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='touch')e.preventDefault();
+    const p=getPos(e,dc);
+    isDrawing=true; drawStartX=p.x; drawStartY=p.y;
+    if(drawTool==='pen'||drawTool==='erase'){currentStroke=[p];}
+    dc.setPointerCapture(e.pointerId);
+  },{passive:false});
+
+  dc.addEventListener('pointermove',e=>{
+    if(!isDrawing)return;
+    if(e.pointerType==='touch')e.preventDefault();
+    const p=getPos(e,dc);
+    if(drawTool==='pen'||drawTool==='erase'){
+      currentStroke.push(p);
+      redrawAll();
+      drawStroke(currentStroke,drawColor,drawSize,drawTool==='erase');
+    } else {
+      redrawAll();
+      drawShape(drawTool,drawStartX,drawStartY,p.x,p.y,drawColor,drawSize,false);
+    }
+  },{passive:false});
+
+  dc.addEventListener('pointerup',e=>{
+    if(!isDrawing)return;
+    const p=getPos(e,dc);
+    isDrawing=false;
+    if(drawTool==='pen'||drawTool==='erase'){
+      if(currentStroke.length>1) drawStrokes.push({type:drawTool,points:currentStroke.slice(),color:drawColor,size:drawSize});
+      currentStroke=[];
+    } else {
+      drawStrokes.push({type:drawTool,x1:drawStartX,y1:drawStartY,x2:p.x,y2:p.y,color:drawColor,size:drawSize});
+    }
+    redrawAll();
+  });
+}
+
+function redrawAll(){
+  const dc=document.getElementById('draw-canvas');
+  if(!dc||dc.style.display==='none')return;
+  const ctx=dc.getContext('2d');
+  ctx.clearRect(0,0,dc.width,dc.height);
+  drawStrokes.forEach(s=>{
+    if(s.type==='pen')drawStroke(s.points,s.color,s.size,false,ctx);
+    else if(s.type==='erase')drawStroke(s.points,s.color,s.size,true,ctx);
+    else drawShape(s.type,s.x1,s.y1,s.x2,s.y2,s.color,s.size,true,ctx);
+  });
+}
+
+function drawStroke(pts,color,size,erase,ctx){
+  if(!ctx)ctx=document.getElementById('draw-canvas').getContext('2d');
+  if(pts.length<2)return;
+  ctx.save();
+  if(erase){ctx.globalCompositeOperation='destination-out';ctx.strokeStyle='rgba(0,0,0,1)';}
+  else{ctx.globalCompositeOperation='source-over';ctx.strokeStyle=color;}
+  ctx.lineWidth=erase?size*4:size; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.stroke(); ctx.restore();
+}
+
+function drawShape(type,x1,y1,x2,y2,color,size,final,ctx){
+  if(!ctx)ctx=document.getElementById('draw-canvas').getContext('2d');
+  ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color;
+  ctx.lineWidth=size; ctx.lineCap='round';
+  if(type==='line'){
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  } else if(type==='arrow'){
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const angle=Math.atan2(y2-y1,x2-x1);
+    const hs=Math.max(10,size*4);
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-hs*Math.cos(angle-0.4),y2-hs*Math.sin(angle-0.4));
+    ctx.lineTo(x2-hs*Math.cos(angle+0.4),y2-hs*Math.sin(angle+0.4));
+    ctx.closePath(); ctx.fill();
+  } else if(type==='circle'){
+    const rx=Math.abs(x2-x1)/2, ry=Math.abs(y2-y1)/2;
+    const cx=(x1+x2)/2, cy=(y1+y2)/2;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx||5,ry||5,0,0,Math.PI*2);
+    ctx.stroke();
+    if(final){
+      ctx.globalAlpha=0.08; ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function undoStroke(){if(drawStrokes.length){drawStrokes.pop();redrawAll();}}
+
+function clearDrawing(){if(!confirm('Alle Zeichnungen auf diesem Video löschen?'))return;drawStrokes=[];redrawAll();}
+
+function quickStartLoad(){
+  // Open file picker for athlete video - pre-assigns athlete
+  document.getElementById('ath-file').click();
+}
+
+function quickStartCamera(){
+  // Open camera via file input with capture attribute
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='video/*'; inp.capture='environment';
+  inp.onchange = e => {
+    const file = e.target.files[0]; if(!file)return;
+    // Rename file with athlete name internally
+    const ath=athletes.find(a=>a.id===currentAthId);
+    if(ath){
+      const ext=file.name.split('.').pop();
+      const date=new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'-');
+      const disc={legen:'Legen',schiessen:'Schiessen',sonstiges:'Sonstiges'}[document.getElementById('ath-vas-disc')?.value||'legen'];
+      athleteNextVideoName = ath.name+'_'+disc+'_'+date+'.'+ext;
+    }
+    loadVidFromFile(file,'ath');
+  };
+  inp.click();
+}
+
+// Override file display name with athlete name
+let athleteNextVideoName = null;
+
+function loadVidFromFile(file, who){
+  const vid=document.getElementById(who+'-vid');
+  vid.src=URL.createObjectURL(file); vid.playbackRate=speed;
+  vid.style.display='block';
+  document.getElementById(who+'-cvs').style.display='block';
+  document.getElementById(who+'-upload').style.display='none';
+  document.getElementById(who+'-ctrl').style.display='flex';
+  const fi=document.getElementById(who+'-fileinfo'); fi.style.display='flex';
+  // Build suggested athlete-based name
+  const ath=athletes.find(a=>a.id===currentAthId);
+  let suggestedName=file.name;
+  if(who==='ath'&&ath){
+    const ext=file.name.split('.').pop();
+    const date=new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'-');
+    const disc={legen:'Legen',schiessen:'Schiessen',sonstiges:'Sonstiges'}[document.getElementById('ath-vas-disc')?.value||'legen'];
+    suggestedName=ath.name+'_'+disc+'_'+date+'.'+ext;
+  }
+  athleteNextVideoName=null;
+  document.getElementById(who+'-fname').textContent=suggestedName.length>34?suggestedName.slice(0,31)+'...':suggestedName;
+  const mb=(file.size/1024/1024).toFixed(1);
+  const dt=file.lastModified?new Date(file.lastModified).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  document.getElementById(who+'-fmeta').textContent=mb+' MB · '+dt;
+  document.getElementById(who+'-assign').style.display='flex';
+  if(currentAthId) document.getElementById(who+'-vas-ath').value=currentAthId;
+  vid.ontimeupdate=()=>{if(!vid.duration)return;document.getElementById(who+'-tl').style.width=(vid.currentTime/vid.duration*100)+'%';document.getElementById(who+'-tc').textContent=fmt(vid.currentTime)+'/'+fmt(vid.duration);};
+  vid.onended=()=>document.getElementById(who+'-pb').textContent='▶';
+  addToMedia(file,who,suggestedName);
+  // Show name confirm bar so user can adjust
+  showNameConfirm(who, suggestedName);
+}
+
+function saveDrawing(){
+  if(!drawStrokes.length){alert('Noch nichts gezeichnet.');return;}
+  const dc=document.getElementById('draw-canvas');
+  const dv=document.getElementById('draw-vid');
+  // Composite: video frame + drawing
+  const comp=document.createElement('canvas');
+  comp.width=dc.width; comp.height=dc.height;
+  const ctx=comp.getContext('2d');
+  try{ctx.drawImage(dv,0,0,comp.width,comp.height);}catch(e){}
+  ctx.drawImage(dc,0,0);
+  const thumb=comp.toDataURL('image/jpeg',0.4);
+  const name='Zeichnung '+new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const discLabel={legen:'Legen',schiessen:'Schießen',sonstiges:'Sonstiges'}[drawCurrentDisc]||drawCurrentDisc;
+  const fullName=name+(drawCurrentAthId?' — '+athletes.find(a=>a.id===drawCurrentAthId)?.name:'');
+  savedDrawings.unshift({id:Date.now(),name:fullName,thumb,strokes:JSON.stringify(drawStrokes),athleteId:drawCurrentAthId,disc:drawCurrentDisc});
+  stor_s('pc_drawings',savedDrawings);
+  renderDrawingList();
+  alert('Zeichnung gespeichert!');
+}
+
+function exportDrawingImage(){
+  const dc=document.getElementById('draw-canvas');
+  const dv=document.getElementById('draw-vid');
+  const comp=document.createElement('canvas');
+  comp.width=dc.width; comp.height=dc.height;
+  const ctx=comp.getContext('2d');
+  try{ctx.drawImage(dv,0,0,comp.width,comp.height);}catch(e){}
+  ctx.drawImage(dc,0,0);
+  const a=document.createElement('a');
+  a.href=comp.toDataURL('image/png');
+  a.download='petanque_zeichnung_'+Date.now()+'.png';
+  a.click();
+}
+
+function loadSavedDrawing(id){
+  const d=savedDrawings.find(x=>x.id===id);
+  if(!d)return;
+  try{drawStrokes=JSON.parse(d.strokes);}catch(e){drawStrokes=[];}
+  redrawAll();
+  alert('Zeichnung geladen — du kannst sie weiter bearbeiten.');
+}
+
+function deleteSavedDrawing(id){
+  if(!confirm('Zeichnung löschen?'))return;
+  savedDrawings=savedDrawings.filter(x=>x.id!==id);
+  stor_s('pc_drawings',savedDrawings);
+  renderDrawingList();
+}
+
+function renderDrawingList(){
+  const el=document.getElementById('drawing-list');
+  if(!savedDrawings.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);">Noch keine gespeicherten Zeichnungen</div>';return;}
+  el.innerHTML='<div class="layer-list">'+savedDrawings.map(d=>{
+    const ath=athletes.find(a=>a.id===d.athleteId);
+    const discLabel={legen:'Legen',schiessen:'Schießen',sonstiges:'Sonstiges'}[d.disc]||'';
+    const discColor={legen:'rgba(0,200,160,.15)',schiessen:'rgba(59,140,255,.15)',sonstiges:'rgba(240,165,0,.15)'}[d.disc]||'rgba(255,255,255,.07)';
+    const discText={legen:'#00c8a0',schiessen:'#3b8cff',sonstiges:'#f0a500'}[d.disc]||'#8b949e';
+    return`<div class="layer-item">
+      <div class="layer-thumb"><img src="${d.thumb}" style="width:100%;height:100%;object-fit:cover;"></div>
+      <div class="layer-name">${d.name}${discLabel?` <span style="padding:1px 5px;border-radius:3px;font-size:10px;background:${discColor};color:${discText};">${discLabel}</span>`:''}</div>
+      <button class="layer-vis" onclick="loadSavedDrawing(${d.id})">Laden</button>
+      <button class="layer-del" onclick="deleteSavedDrawing(${d.id})">✕</button>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+// Init drawing list on load
+renderDrawingList();
+updateDrawAthleteSelect();
+if(currentAthId)updateQuickStart(athletes.find(a=>a.id===currentAthId));
+
+
+// ── VIDEO NAMING ──────────────────────────────────────────────────────────────
+function showNameConfirm(who, suggestedName){
+  const bar=document.getElementById(who+'-name-confirm');
+  const inp=document.getElementById(who+'-name-input');
+  if(!bar||!inp)return;
+  inp.value=suggestedName;
+  bar.style.display='flex';
+}
+
+function confirmVideoName(who){
+  const inp=document.getElementById(who+'-name-input');
+  const bar=document.getElementById(who+'-name-confirm');
+  if(!inp||!inp.value.trim())return;
+  const newName=inp.value.trim();
+  // Save display name in app
+  document.getElementById(who+'-fname').textContent=newName.length>34?newName.slice(0,31)+'...':newName;
+  const m=mediaVids.find(x=>x.role===who||x.id===mediaVids[0]?.id);
+  if(m){m.name=newName;stor_s('pc_media',mediaVids);renderMedia();}
+  bar.style.display='none';
+  // Show rename helper popup
+  showRenameHelper(newName);
+}
+
+function showRenameHelper(newName){
+  // Create overlay with step-by-step instructions
+  const existing=document.getElementById('rename-helper');
+  if(existing)existing.remove();
+  const div=document.createElement('div');
+  div.id='rename-helper';
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;';
+  div.innerHTML=`
+    <div style="background:#161b22;border-radius:14px;border:1px solid rgba(255,255,255,.09);padding:20px;max-width:360px;width:100%;">
+      <div style="font-size:15px;font-weight:700;color:#e6edf3;margin-bottom:4px;">📁 Datei umbenennen</div>
+      <div style="font-size:12px;color:#8b949e;margin-bottom:14px;">Der Name wird in der App gespeichert. Um auch die echte Datei umzubenennen, folge diesen Schritten:</div>
+      <div style="background:#1c2230;border-radius:8px;padding:10px 12px;margin-bottom:12px;">
+        <div style="font-size:11px;color:#8b949e;margin-bottom:4px;">Gewünschter Dateiname:</div>
+        <div style="font-size:13px;font-weight:700;color:#00c8a0;word-break:break-all;">${newName}</div>
+        <button onclick="navigator.clipboard?.writeText('${newName}').then(()=>this.textContent='✓ Kopiert!').catch(()=>{})" style="margin-top:8px;padding:4px 12px;border-radius:6px;border:1px solid rgba(0,200,160,.4);background:rgba(0,200,160,.1);color:#00c8a0;font-size:11px;cursor:pointer;">📋 Name kopieren</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+          <div style="font-size:12px;color:#e6edf3;">Samsung <strong>Datei</strong>-App öffnen</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+          <div style="font-size:12px;color:#e6edf3;"><strong>DCIM → Camera</strong> öffnen (oder <strong>Download</strong>)</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+          <div style="font-size:12px;color:#e6edf3;">Video <strong>antippen und halten</strong> → <strong>Umbenennen</strong></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</div>
+          <div style="font-size:12px;color:#e6edf3;">Kopierten Namen einfügen und bestätigen</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8b949e;background:#0d1117;border-radius:6px;padding:8px 10px;margin-bottom:14px;">
+        💡 In der App wird der Name <span style="color:#00c8a0;">"${newName}"</span> bereits korrekt angezeigt und gespeichert.
+      </div>
+      <button onclick="document.getElementById('rename-helper').remove()" style="width:100%;padding:9px;border-radius:8px;border:none;background:#00c8a0;color:#000;font-size:13px;font-weight:700;cursor:pointer;">Verstanden</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function renameMedia(id){
+  const m=mediaVids.find(x=>x.id===id);
+  if(!m)return;
+  const newName=prompt('Neuer Name für das Video:', m.name);
+  if(!newName||!newName.trim())return;
+  m.name=newName.trim();
+  stor_s('pc_media',mediaVids);
+  renderMedia();
+}
+
+
+// ── PWA + FILE SYSTEM ACCESS ──────────────────────────────────────────────────
+let deferredInstallPrompt = null;
+let fsDirectoryHandle = null;
+
+// Service Worker registration
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    // Inline service worker as blob since we're a single file
+    const swCode = `
+const CACHE='petanque-v1';
+const ASSETS=['/'];
+self.addEventListener('install', e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll([]))));
+self.addEventListener('fetch', e=>e.respondWith(
+  caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503})))
+));
+`;
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).catch(()=>{});
+  });
+}
+
+// PWA Install prompt
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const banner = document.getElementById('pwa-banner');
+  if(banner) banner.style.display='flex';
+});
+
+window.addEventListener('appinstalled', ()=>{
+  const banner = document.getElementById('pwa-banner');
+  if(banner) banner.style.display='none';
+  deferredInstallPrompt = null;
+});
+
+async function installPWA(){
+  if(!deferredInstallPrompt){
+    // Samsung Browser fallback instructions
+    showPWAInstructions();
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const result = await deferredInstallPrompt.userChoice;
+  if(result.outcome==='accepted'){
+    document.getElementById('pwa-banner').style.display='none';
+  }
+  deferredInstallPrompt = null;
+}
+
+function showPWAInstructions(){
+  const div = document.createElement('div');
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;';
+  div.innerHTML=`
+    <div style="background:#161b22;border-radius:14px;border:1px solid rgba(255,255,255,.09);padding:20px;max-width:340px;width:100%;">
+      <div style="font-size:15px;font-weight:700;color:#e6edf3;margin-bottom:12px;">📱 App installieren</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:22px;height:22px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+          <div style="font-size:12px;color:#e6edf3;">Im Samsung Internet Browser tippe auf das <strong>☰ Menü</strong> (unten rechts)</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:22px;height:22px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+          <div style="font-size:12px;color:#e6edf3;">Tippe auf <strong>"Seite hinzufügen"</strong></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:22px;height:22px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+          <div style="font-size:12px;color:#e6edf3;">Wähle <strong>"Startbildschirm"</strong> → Hinzufügen</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="width:22px;height:22px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+          <div style="font-size:12px;color:#e6edf3;">PétanqueCoach erscheint als App-Icon auf dem Homescreen</div>
+        </div>
+      </div>
+      <div style="background:#0d1117;border-radius:8px;padding:8px 10px;margin-bottom:14px;font-size:11px;color:#8b949e;">
+        💡 Danach läuft die App auch <strong style="color:#00c8a0;">ohne Internet</strong> und startet direkt vom Homescreen.
+      </div>
+      <button onclick="this.closest('div[style]').remove()" style="width:100%;padding:9px;border-radius:8px;border:none;background:#00c8a0;color:#000;font-size:13px;font-weight:700;cursor:pointer;">Verstanden</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+// ── FILE SYSTEM ACCESS API ────────────────────────────────────────────────────
+async function requestFileAccess(){
+  if(!('showDirectoryPicker' in window)){
+    alert('Dein Browser unterstützt den direkten Dateizugriff noch nicht. Die App-interne Umbenennung funktioniert weiterhin.');
+    return;
+  }
+  try{
+    fsDirectoryHandle = await window.showDirectoryPicker({mode:'readwrite'});
+    document.getElementById('fs-folder-name').textContent = '📂 '+fsDirectoryHandle.name;
+    stor_s('pc_fs_folder', fsDirectoryHandle.name);
+    showFSSuccess(fsDirectoryHandle.name);
+  } catch(e){
+    if(e.name!=='AbortError') console.error(e);
+  }
+}
+
+function showFSSuccess(folderName){
+  const div=document.createElement('div');
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;';
+  div.innerHTML=`
+    <div style="background:#161b22;border-radius:14px;border:1px solid rgba(0,200,160,.3);padding:20px;max-width:320px;width:100%;text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">✅</div>
+      <div style="font-size:15px;font-weight:700;color:#00c8a0;margin-bottom:6px;">Ordner verbunden!</div>
+      <div style="font-size:12px;color:#8b949e;margin-bottom:14px;">📂 <strong style="color:#e6edf3;">${folderName}</strong><br>Die App kann jetzt Dateien in diesem Ordner direkt umbenennen.</div>
+      <button onclick="this.closest('div[style]').remove()" style="width:100%;padding:9px;border-radius:8px;border:none;background:#00c8a0;color:#000;font-size:13px;font-weight:700;cursor:pointer;">Super!</button>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+async function renameFileInFS(oldName, newName){
+  if(!fsDirectoryHandle){
+    showRenameHelper(newName);
+    return;
+  }
+  try{
+    // Find file in directory
+    for await(const [name, handle] of fsDirectoryHandle.entries()){
+      if(name===oldName&&handle.kind==='file'){
+        // Read file content
+        const file = await handle.getFile();
+        const buffer = await file.arrayBuffer();
+        // Write with new name
+        const newHandle = await fsDirectoryHandle.getFileHandle(newName, {create:true});
+        const writable = await newHandle.createWritable();
+        await writable.write(buffer);
+        await writable.close();
+        // Remove old file
+        await fsDirectoryHandle.removeEntry(oldName);
+        return true;
+      }
+    }
+    showRenameHelper(newName);
+  } catch(e){
+    console.error(e);
+    showRenameHelper(newName);
+  }
+}
+
+// Show FS bar when app loads if FS API is available
+window.addEventListener('DOMContentLoaded', ()=>{
+  if('showDirectoryPicker' in window){
+    const bar = document.getElementById('fs-bar');
+    if(bar){
+      bar.style.display='flex';
+      const saved = stor('pc_fs_folder');
+      if(saved) document.getElementById('fs-folder-name').textContent='📂 '+saved+' (neu verbinden)';
+    }
+  }
+  // Show install button in settings
+  const settingsInstallDiv = document.getElementById('pwa-settings-install');
+  if(settingsInstallDiv) settingsInstallDiv.style.display='flex';
+});
+
+// Show install button in settings page
+setTimeout(()=>{
+  const banner = document.getElementById('pwa-banner');
+  if(banner && !deferredInstallPrompt){
+    // Show manually via settings only
+  }
+},2000);
+
+</script>
+</body>
+</html>
