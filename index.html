@@ -1855,9 +1855,15 @@ function updateRenamePreview(who){
 }
 
 async function renameVideoFile(who){
-  const newName = buildNewFileName(who);
+  // Get name directly from preview text (already computed and shown)
+  const preview = document.getElementById(who+'-rename-preview');
+  const newName = preview ? preview.textContent.trim() : buildNewFileName(who);
   const origName = originalFileNames[who];
-  if(!newName || !origName){ alert('Bitte Athlet und Disziplin auswählen.'); return; }
+  // Validate: must have a real name (not the placeholder text)
+  if(!newName || newName === '← Athlet auswählen' || !origName){
+    alert('Bitte zuerst einen Athleten im Dropdown auswählen.');
+    return;
+  }
 
   // Try Capacitor Filesystem plugin first (APK)
   if(window.Capacitor && window.Capacitor.isNativePlatform()){
