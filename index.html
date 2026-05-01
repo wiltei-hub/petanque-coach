@@ -291,15 +291,20 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--border);bord
         <button class="name-confirm-btn" onclick="confirmVideoName('ath')">✓ Speichern + Anleitung</button>
         <button class="name-cancel-btn" onclick="document.getElementById('ath-name-confirm').style.display='none'">✕</button>
       </div>
-      <div class="vid-assign" id="ath-assign">
+      <div class="vid-assign" id="ath-assign" style="flex-wrap:wrap;gap:5px;">
         <span class="vas-label">Athlet:</span>
-        <select class="vas-select" id="ath-vas-ath" onchange="updateVidAssign('ath')"></select>
+        <select class="vas-select" id="ath-vas-ath" onchange="updateVidAssign('ath');updateRenamePreview('ath')"></select>
         <span class="vas-label">Disziplin:</span>
-        <select class="vas-select" id="ath-vas-disc" onchange="updateVidAssign('ath')">
+        <select class="vas-select" id="ath-vas-disc" onchange="updateVidAssign('ath');updateRenamePreview('ath')">
           <option value="legen">Legen</option>
           <option value="schiessen">Schießen</option>
           <option value="sonstiges">Sonstiges</option>
         </select>
+        <div id="ath-rename-wrap" style="display:none;width:100%;display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--border);flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);">Neuer Name:</span>
+          <span id="ath-rename-preview" style="font-size:11px;color:var(--accent);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <button onclick="renameVideoFile('ath')" style="padding:3px 10px;border-radius:5px;border:none;background:var(--accent);color:#000;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">✓ Umbenennen</button>
+        </div>
       </div>
       <div class="vid-body">
         <div class="upload-area" id="ath-upload" onclick="document.getElementById('ath-file').click()">
@@ -335,15 +340,20 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--border);bord
         <button class="name-confirm-btn" onclick="confirmVideoName('ref')">✓ Speichern + Anleitung</button>
         <button class="name-cancel-btn" onclick="document.getElementById('ref-name-confirm').style.display='none'">✕</button>
       </div>
-      <div class="vid-assign" id="ref-assign">
+      <div class="vid-assign" id="ref-assign" style="flex-wrap:wrap;gap:5px;">
         <span class="vas-label">Athlet:</span>
-        <select class="vas-select" id="ref-vas-ath" onchange="updateVidAssign('ref')"></select>
+        <select class="vas-select" id="ref-vas-ath" onchange="updateVidAssign('ref');updateRenamePreview('ref')"></select>
         <span class="vas-label">Disziplin:</span>
-        <select class="vas-select" id="ref-vas-disc" onchange="updateVidAssign('ref')">
+        <select class="vas-select" id="ref-vas-disc" onchange="updateVidAssign('ref');updateRenamePreview('ref')">
           <option value="legen">Legen</option>
           <option value="schiessen">Schießen</option>
           <option value="sonstiges">Sonstiges</option>
         </select>
+        <div id="ref-rename-wrap" style="display:none;width:100%;display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--border);flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);">Neuer Name:</span>
+          <span id="ref-rename-preview" style="font-size:11px;color:var(--accent);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <button onclick="renameVideoFile('ref')" style="padding:3px 10px;border-radius:5px;border:none;background:var(--accent);color:#000;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">✓ Umbenennen</button>
+        </div>
       </div>
       <div class="vid-body">
         <div class="upload-area" id="ref-upload" onclick="document.getElementById('ref-file').click()">
@@ -1365,6 +1375,8 @@ function quickStartCamera(){
 let athleteNextVideoName = null;
 
 function loadVidFromFile(file, who){
+  // Store original filename for rename
+  originalFileNames[who] = file.name;
   const vid=document.getElementById(who+'-vid');
   vid.src=URL.createObjectURL(file); vid.playbackRate=speed;
   vid.style.display='block';
@@ -1393,6 +1405,8 @@ function loadVidFromFile(file, who){
   addToMedia(file,who,suggestedName);
   // Show name confirm bar so user can adjust
   showNameConfirm(who, suggestedName);
+  // Update rename preview
+  updateRenamePreview(who);
 }
 
 function saveDrawing(){
@@ -1790,6 +1804,129 @@ function showImportStatus(msg, success){
   el.style.border = '1px solid '+(success ? 'rgba(0,200,160,.3)' : 'rgba(226,75,74,.3)');
   el.textContent = msg;
   setTimeout(()=>el.style.display='none', 5000);
+}
+
+
+// ── VIDEO FILE RENAME ─────────────────────────────────────────────────────────
+let originalFileNames = {ath: null, ref: null}; // store original filename for rename
+
+function buildNewFileName(who){
+  const athId = +document.getElementById(who+'-vas-ath')?.value || null;
+  const disc = document.getElementById(who+'-vas-disc')?.value || 'legen';
+  const ath = athletes.find(a=>a.id===athId);
+  if(!ath) return null;
+  const athName = ath.name.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_äöüÄÖÜß-]/g,'');
+  const discLabel = {legen:'Legen', schiessen:'Schiessen', sonstiges:'Sonstiges'}[disc] || disc;
+  const now = new Date();
+  const date = now.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'-');
+  const time = now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}).replace(':','-');
+  const orig = originalFileNames[who] || '';
+  const ext = orig.includes('.') ? orig.split('.').pop() : 'mp4';
+  return `${athName}_${discLabel}_${date}_${time}.${ext}`;
+}
+
+function updateRenamePreview(who){
+  const newName = buildNewFileName(who);
+  const wrap = document.getElementById(who+'-rename-wrap');
+  const preview = document.getElementById(who+'-rename-preview');
+  if(!wrap || !preview) return;
+  if(newName && originalFileNames[who]){
+    wrap.style.display = 'flex';
+    preview.textContent = newName;
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+async function renameVideoFile(who){
+  const newName = buildNewFileName(who);
+  const origName = originalFileNames[who];
+  if(!newName || !origName){ alert('Bitte Athlet und Disziplin auswählen.'); return; }
+
+  // Try Capacitor Filesystem plugin first (APK)
+  if(window.Capacitor && window.Capacitor.isNativePlatform()){
+    try {
+      const { Filesystem, Directory } = window.Capacitor.Plugins;
+      // Try to rename in common locations
+      const dirs = [Directory.ExternalStorage, Directory.Documents, Directory.Cache];
+      let renamed = false;
+      for(const dir of dirs){
+        try {
+          await Filesystem.rename({
+            from: 'DCIM/Camera/'+origName,
+            to: 'DCIM/Camera/'+newName,
+            directory: dir
+          });
+          renamed = true;
+          break;
+        } catch(e){ /* try next */ }
+        try {
+          await Filesystem.rename({
+            from: 'Download/'+origName,
+            to: 'Download/'+newName,
+            directory: dir
+          });
+          renamed = true;
+          break;
+        } catch(e){ /* try next */ }
+      }
+      if(renamed){
+        showRenameSuccess(who, newName);
+        return;
+      }
+    } catch(e){ console.log('Capacitor rename failed:', e); }
+  }
+
+  // Fallback: File System Access API (PWA/Browser)
+  if(window.fsDirectoryHandle){
+    const success = await renameFileInFS(origName, newName);
+    if(success){ showRenameSuccess(who, newName); return; }
+  }
+
+  // Final fallback: show instructions
+  showRenameInstructions(origName, newName);
+}
+
+function showRenameSuccess(who, newName){
+  // Update display
+  document.getElementById(who+'-fname').textContent = newName.length>34?newName.slice(0,31)+'...':newName;
+  originalFileNames[who] = newName;
+  // Update media entry
+  const m = mediaVids.find(x=>x.name===originalFileNames[who]||x.role===who);
+  if(m){ m.name=newName; stor_s('pc_media',mediaVids); renderMedia(); }
+  // Hide rename bar
+  document.getElementById(who+'-rename-wrap').style.display='none';
+  // Show success toast
+  const toast = document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#00c8a0;color:#000;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;z-index:500;';
+  toast.textContent='✓ Datei umbenannt: '+newName;
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 3000);
+}
+
+function showRenameInstructions(origName, newName){
+  const div = document.createElement('div');
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;';
+  div.innerHTML=`
+    <div style="background:#161b22;border-radius:14px;border:1px solid rgba(255,255,255,.09);padding:20px;max-width:360px;width:100%;">
+      <div style="font-size:15px;font-weight:700;color:#e6edf3;margin-bottom:12px;">📁 Datei umbenennen</div>
+      <div style="background:#0d1117;border-radius:8px;padding:10px;margin-bottom:12px;">
+        <div style="font-size:10px;color:#8b949e;margin-bottom:3px;">Alter Name:</div>
+        <div style="font-size:11px;color:#e6edf3;word-break:break-all;">${origName}</div>
+        <div style="font-size:10px;color:#8b949e;margin:6px 0 3px;">Neuer Name:</div>
+        <div style="font-size:12px;font-weight:700;color:#00c8a0;word-break:break-all;">${newName}</div>
+        <button onclick="navigator.clipboard?.writeText('${newName}')" style="margin-top:8px;padding:3px 10px;border-radius:5px;border:1px solid rgba(0,200,160,.3);background:rgba(0,200,160,.1);color:#00c8a0;font-size:10px;cursor:pointer;">📋 Name kopieren</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+        <div style="display:flex;gap:8px;"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div><div style="font-size:12px;color:#e6edf3;">Samsung <strong>Datei</strong>-App öffnen</div></div>
+        <div style="display:flex;gap:8px;"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div><div style="font-size:12px;color:#e6edf3;"><strong>DCIM → Camera</strong> öffnen</div></div>
+        <div style="display:flex;gap:8px;"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div><div style="font-size:12px;color:#e6edf3;">Datei <strong>${origName}</strong> antippen und halten → <strong>Umbenennen</strong></div></div>
+        <div style="display:flex;gap:8px;"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,200,160,.2);color:#00c8a0;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div><div style="font-size:12px;color:#e6edf3;">Kopierten Namen einfügen → bestätigen</div></div>
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:9px;border-radius:8px;border:none;background:#00c8a0;color:#000;font-size:13px;font-weight:700;cursor:pointer;">Verstanden</button>
+    </div>
+  `;
+  document.body.appendChild(div);
 }
 
 </script>
