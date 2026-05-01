@@ -1813,54 +1813,53 @@ function showImportStatus(msg, success){
 let originalFileNames = {ath: null, ref: null}; // store original filename for rename
 
 function buildNewFileName(who){
-  const athId = +document.getElementById(who+'-vas-ath')?.value || null;
-  const disc = document.getElementById(who+'-vas-disc')?.value || 'legen';
-  // Also try currentAthId as fallback
+  // Get athlete — check dropdown first, then currentAthId
+  const selEl = document.getElementById(who+'-vas-ath');
+  const athId = selEl ? (+selEl.value || null) : null;
   const ath = athletes.find(a=>a.id===athId) || athletes.find(a=>a.id===currentAthId);
-  if(!ath) return null;
-  const athName = ath.name.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_äöüÄÖÜß-]/g,'');
+  if(!ath || !originalFileNames[who]) return null;
+  // Get discipline
+  const discEl = document.getElementById(who+'-vas-disc');
+  const disc = discEl ? discEl.value : 'legen';
   const discLabel = {legen:'Legen', schiessen:'Schiessen', sonstiges:'Sonstiges'}[disc] || disc;
+  // Clean athlete name
+  const athName = ath.name.trim().replace(/\s+/g,'_');
+  // Timestamp yyyymmdd_hhmm
   const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth()+1).padStart(2,'0');
-  const dd = String(now.getDate()).padStart(2,'0');
-  const hh = String(now.getHours()).padStart(2,'0');
-  const mi = String(now.getMinutes()).padStart(2,'0');
-  const timestamp = `${yyyy}${mm}${dd}_${hh}${mi}`;
-  const orig = originalFileNames[who] || '';
-  const ext = orig.includes('.') ? orig.split('.').pop() : 'mp4';
-  return `${athName}_${discLabel}_${timestamp}.${ext}`;
+  const ts = String(now.getFullYear()) +
+    String(now.getMonth()+1).padStart(2,'0') +
+    String(now.getDate()).padStart(2,'0') + '_' +
+    String(now.getHours()).padStart(2,'0') +
+    String(now.getMinutes()).padStart(2,'0');
+  // Extension from original file
+  const orig = originalFileNames[who];
+  const ext = orig.includes('.') ? orig.split('.').pop().toLowerCase() : 'mp4';
+  return athName + '_' + discLabel + '_' + ts + '.' + ext;
 }
 
 function updateRenamePreview(who){
-  // Make sure dropdowns are populated
+  // Ensure dropdowns are filled
   updateAllAthleteSelects();
-  // Re-select current athlete if set
-  if(currentAthId){
-    const sel=document.getElementById(who+'-vas-ath');
-    if(sel && !sel.value) sel.value=currentAthId;
-  }
-  const newName = buildNewFileName(who);
+  // Auto-select current athlete in dropdown if not yet set
+  const sel = document.getElementById(who+'-vas-ath');
+  if(sel && !sel.value && currentAthId) sel.value = String(currentAthId);
   const wrap = document.getElementById(who+'-rename-wrap');
   const preview = document.getElementById(who+'-rename-preview');
   if(!wrap || !preview) return;
-  if(newName && originalFileNames[who]){
-    wrap.style.display = 'flex';
-    preview.textContent = newName;
-  } else {
-    // Show wrap anyway so user can select athlete
-    wrap.style.display = 'flex';
-    preview.textContent = newName || '← Athlet auswählen';
-  }
+  wrap.style.display = 'flex';
+  const newName = buildNewFileName(who);
+  preview.textContent = newName || '← Athlet auswählen';
 }
 
 async function renameVideoFile(who){
-  // Get name directly from preview text (already computed and shown)
-  const preview = document.getElementById(who+'-rename-preview');
-  const newName = preview ? preview.textContent.trim() : buildNewFileName(who);
+  // Recompute name fresh at click time
   const origName = originalFileNames[who];
-  // Validate: must have a real name (not the placeholder text)
-  if(!newName || newName === '← Athlet auswählen' || !origName){
+  if(!origName){ alert('Kein Video geladen.'); return; }
+  // Make sure athlete is selected
+  const sel = document.getElementById(who+'-vas-ath');
+  if(sel && !sel.value && currentAthId) sel.value = String(currentAthId);
+  const newName = buildNewFileName(who);
+  if(!newName){
     alert('Bitte zuerst einen Athleten im Dropdown auswählen.');
     return;
   }
