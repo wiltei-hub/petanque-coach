@@ -1405,7 +1405,9 @@ function loadVidFromFile(file, who){
   addToMedia(file,who,suggestedName);
   // Show name confirm bar so user can adjust
   showNameConfirm(who, suggestedName);
-  // Update rename preview
+  // Update rename preview — show bar immediately
+  const wrap=document.getElementById(who+'-rename-wrap');
+  if(wrap) wrap.style.display='flex';
   updateRenamePreview(who);
 }
 
@@ -1813,19 +1815,31 @@ let originalFileNames = {ath: null, ref: null}; // store original filename for r
 function buildNewFileName(who){
   const athId = +document.getElementById(who+'-vas-ath')?.value || null;
   const disc = document.getElementById(who+'-vas-disc')?.value || 'legen';
-  const ath = athletes.find(a=>a.id===athId);
+  // Also try currentAthId as fallback
+  const ath = athletes.find(a=>a.id===athId) || athletes.find(a=>a.id===currentAthId);
   if(!ath) return null;
   const athName = ath.name.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_äöüÄÖÜß-]/g,'');
   const discLabel = {legen:'Legen', schiessen:'Schiessen', sonstiges:'Sonstiges'}[disc] || disc;
   const now = new Date();
-  const date = now.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'-');
-  const time = now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}).replace(':','-');
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mi = String(now.getMinutes()).padStart(2,'0');
+  const timestamp = `${yyyy}${mm}${dd}_${hh}${mi}`;
   const orig = originalFileNames[who] || '';
   const ext = orig.includes('.') ? orig.split('.').pop() : 'mp4';
-  return `${athName}_${discLabel}_${date}_${time}.${ext}`;
+  return `${athName}_${discLabel}_${timestamp}.${ext}`;
 }
 
 function updateRenamePreview(who){
+  // Make sure dropdowns are populated
+  updateAllAthleteSelects();
+  // Re-select current athlete if set
+  if(currentAthId){
+    const sel=document.getElementById(who+'-vas-ath');
+    if(sel && !sel.value) sel.value=currentAthId;
+  }
   const newName = buildNewFileName(who);
   const wrap = document.getElementById(who+'-rename-wrap');
   const preview = document.getElementById(who+'-rename-preview');
@@ -1834,7 +1848,9 @@ function updateRenamePreview(who){
     wrap.style.display = 'flex';
     preview.textContent = newName;
   } else {
-    wrap.style.display = 'none';
+    // Show wrap anyway so user can select athlete
+    wrap.style.display = 'flex';
+    preview.textContent = newName || '← Athlet auswählen';
   }
 }
 
